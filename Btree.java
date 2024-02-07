@@ -17,13 +17,13 @@ final class Btree {
   /* Node array, initialized with length = 1. i.e. root node */
   private Node[] nodes = new Node[1];
 
-  /* Number of currently used nodes. */
+  /* Number of currently used nodes. Default is 0. */
   private int cntNodes;
 
-  /* Pointer to the root node. */
+  /* Pointer to the root node. Default is 0. */
   private int root;
 
-  /* Number of currently used values. */
+  /* Number of currently used values. Default is 0. */
   private int cntValues;
 
   /*
@@ -53,6 +53,27 @@ final class Btree {
     if(nodeInsert(value, root) == -1) cntValues++;
   }
 
+  public void Display(int nodeId) {
+    Node node = nodes[nodeId];
+    if (node == null) return;
+    if (isLeaf(node)) { // Leaf node
+        for (int i = 0; i < node.size; i++) {
+            System.out.print(node.values[i] + " ");
+        }
+        System.out.println();
+    } else { // Internal node
+        for (int i = 0; i < node.size; i++) {
+            Display(node.children[i]);
+            System.out.print("[" + node.values[i] + "] ");
+        }
+        Display(node.children[node.size]);
+    }
+
+    if (nodeId == root) {
+      // If this is the root node, print a newline at the end
+      System.out.println();
+    }
+  }
 
   /*
    * CntValues()
@@ -70,13 +91,63 @@ final class Btree {
    *
    */
   private boolean nodeLookup(int value, int pointer) {
-    //
-    //
-    // TODO
-    //
-    //
-    return XXX;
+    Node node = nodes[pointer];
+    int i = 0;
+
+    // Iterate through keys in the node to find the smallest index i such that value <= node.values[i]
+    while (i < node.size && value > node.values[i]) {
+        i++;
+    }
+
+    // If the value matches the key at index i in the node
+    if (i < node.size && value == node.values[i]) {
+        return true; // The value is found
+    }
+
+    // If the node is a leaf, then the search is unsuccessful
+    if (isLeaf(node)) {
+        return false;
+    } else {
+        // Recur to search the appropriate subtree
+        return nodeLookup(value, node.children[i]);
+    }
   }
+
+  // TODO: might use binary search for nodeLookup:
+
+//   private boolean nodeLookup(int value, int pointer) {
+//     Node node = nodes[pointer];
+    
+//     // Perform a binary search to find the smallest index i such that value <= node.values[i]
+//     int left = 0;
+//     int right = node.size - 1;
+//     int i = 0;
+
+//     while (left <= right) {
+//         int mid = left + (right - left) / 2;
+
+//         if (node.values[mid] == value) {
+//             return true; // The value is found
+//         } else if (node.values[mid] < value) {
+//             left = mid + 1;
+//         } else {
+//             i = mid; // Record the position to recurse on if the value is not found
+//             right = mid - 1;
+//         }
+//     }
+
+//     // If the node is a leaf, then the search is unsuccessful
+//     if (isLeaf(node)) {
+//         return false;
+//     } else {
+//         // Recur to search the appropriate subtree
+//         // Note: The 'children' array holds pointers to the children nodes
+//         // We assume that children nodes exist and are loaded in memory
+//         // In an actual disk-based B-tree implementation, you would perform a disk read operation here
+//         return nodeLookup(value, node.children[i]);
+//     }
+// }
+
 
   /*
    * nodeInsert(int value, int pointer)
@@ -102,8 +173,16 @@ final class Btree {
    *         (Leaf node -> a missing children)
    */
   boolean isLeaf(Node node) {
-    return node.children == null; // TODO: check the children size is greater than 0
+    // A node is considered a leaf if it has no children.
+    // check if the 'children' field is null.
+    if (node.children == null) {
+      return true;
+    }
+    
+    // check if the 'children' list is empty.
+    return node.children.length == 0;
   }
+  
 
   /*
    * initNode(): Initialize a new node and returns the pointer.
