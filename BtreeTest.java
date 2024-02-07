@@ -28,7 +28,7 @@ public final class BtreeTest {
 
     System.out.println("Insert Values...");
     for(int v : values) tree.Insert(v);
-    int size = tree.cntValues();
+    int size = tree.CntValues();
     System.out.println("Stored Nodes: " + size + "\n");
 
     System.out.println("Finding Values...");
@@ -38,7 +38,7 @@ public final class BtreeTest {
 
     System.out.println("Reinsert Values... ");
     for(int v : values) tree.Insert(v);
-    System.out.println(tree.cntValues() + " stored, " + size + " expected.\n");
+    System.out.println(tree.CntValues() + " stored, " + size + " expected.\n");
 
     System.out.println("Finding Values...");
     found = 0;

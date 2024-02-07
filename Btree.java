@@ -31,7 +31,7 @@ final class Btree {
    */
   public Btree() {
     root = initNode();
-    nodes[root].children[0] = createLeaf();
+    nodes[root].children[0] = createLeaf();// TODO, check why create leaf????
   }
 
   /*********** B tree functions for Public ******************/
@@ -121,7 +121,6 @@ final class Btree {
   }
 
   // TODO: might use binary search for nodeLookup:
-
 //   private boolean nodeLookup(int value, int pointer) {
 //     Node node = nodes[pointer];
     
@@ -155,40 +154,64 @@ final class Btree {
 //     }
 // }
 
+  // TODO: use "check size" when insert new node
+  // TODO: try to use createNode()
+
+  /**
+   * Splits the specified full child of a given parent node.
+   * 
+   * @param parent   The pointer of the parent node in the nodes array.
+   * @param i        The index within the parent node's children array where the full child is located.
+   * @param fullChild The pointer of the full child node in the nodes array that needs to be split.
+   */
   private void splitChild(int parent, int i, int fullChild) {
     int newChild = initNode();
     Node child = nodes[fullChild];
     Node newNode = nodes[newChild];
+    
+    // Set the size of the new node to half the maximum node size.
     newNode.size = NODESIZE / 2;
 
+    // Copy the second half of the full child's values to the new node.
     System.arraycopy(child.values, NODESIZE / 2, newNode.values, 0, NODESIZE / 2);
+
+    // If the full child is not a leaf, copy the second half of its children to the new node.
     if (!isLeaf(child)) {
         System.arraycopy(child.children, NODESIZE / 2, newNode.children, 0, NODESIZE / 2 + 1);
     }
 
+    // Resize the child node. if node size = 5, the new size should be 2.
     child.size = NODESIZE / 2;
 
+    // Shift the parent's children references to make room for the new node.
     System.arraycopy(nodes[parent].children, i + 1, nodes[parent].children, i + 2, nodes[parent].size - i);
+    
     nodes[parent].children[i + 1] = newChild;
 
+    // Shift the parent's values to make room for the new value that will be promoted from the child.
     System.arraycopy(nodes[parent].values, i, nodes[parent].values, i + 1, nodes[parent].size - i);
-    nodes[parent].values[i] = child.values[NODESIZE / 2 - 1]; // Adjusted to correctly position the median
+    
+    // Promote the median value
+    nodes[parent].values[i] = child.values[NODESIZE / 2 - 1];
 
     nodes[parent].size++;
   }
+
 
 
   private int insertNonFull(int nodeIndex, int value) {
     Node node = nodes[nodeIndex];
     int i = node.size - 1;
 
-    if (isLeaf(node)) { // Use isLeaf method for leaf check
-        // Check if the value already exists
+    if (isLeaf(node)) { 
+        // TODO: might change to binary search
+        // Check if the value already exists 
         for (int j = 0; j < node.size; j++) {
             if (node.values[j] == value) {
                 return -2; // Value already exists
             }
         }
+
         // Insert the value into the correct position in a leaf node
         while (i >= 0 && value < node.values[i]) {
             node.values[i + 1] = node.values[i];
@@ -197,21 +220,22 @@ final class Btree {
         node.values[i + 1] = value;
         node.size++;
         return -1; // Value inserted successfully
-    } else {
-        // Determine the correct child node to descend into
-        while (i >= 0 && value < node.values[i]) {
-          i--;
-      }
-      i++;
-      if (nodes[node.children[i]].size == NODESIZE - 1) {
-          splitChild(nodeIndex, i, node.children[i]); // Correctly call splitChild without handling a return value
-          if (value > node.values[i]) {
-              i++;
-          }
-      }
-      // Recurse into the appropriate child node for insertion
-      return insertNonFull(node.children[i], value);
+    } 
+
+    // Determine the correct child node to descend into
+    while (i >= 0 && value < node.values[i]) {
+      i--;
     }
+    i++;
+    // if the node is full, split the node
+    if (nodes[node.children[i]].size == NODESIZE) { 
+        splitChild(nodeIndex, i, node.children[i]); 
+        if (value > node.values[i]) {
+            i++;
+        }
+    }
+    // Recurse into the appropriate child node for insertion
+    return insertNonFull(node.children[i], value);
   }
 
   /*
@@ -221,9 +245,10 @@ final class Btree {
    *            something else if the parent node has to be restructured
    */
   private int nodeInsert(int value, int pointer) {
-    Node node = nodes[pointer];
-    if (node.size == NODESIZE - 1) {
-        if (pointer == root) {
+    Node currNode = nodes[pointer];
+    if (currNode.size == NODESIZE ) { // If current node is full
+        if (pointer == root) { // if current node is root
+          // create a new root and split the old root
             int newRoot = initNode();
             nodes[newRoot].children[0] = pointer;
             splitChild(newRoot, 0, pointer);
