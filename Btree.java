@@ -50,7 +50,13 @@ final class Btree {
    *    - If -2 is returned, the value already exists.
    */
   public void Insert(int value) {
-    if(nodeInsert(value, root) == -1) cntValues++;
+    int result = nodeInsert(value, root);
+    if (result == -1) {
+        cntValues++; // Value successfully inserted, increment the count of values
+        System.out.println("Insertion complete: " + value + " has been added.");
+    } else if (result == -2) {
+        System.out.println("Insertion failed: " + value + " already exists.");
+    }
   }
 
   public void Display(int nodeId) {
@@ -70,8 +76,9 @@ final class Btree {
     }
 
     if (nodeId == root) {
-      // If this is the root node, print a newline at the end
-      System.out.println();
+        // If this is the root node, print total counts at the end
+        System.out.println("\nTotal number of values (cntValues): " + cntValues);
+        System.out.println("Total number of nodes (cntNodes): " + cntNodes);
     }
   }
 
@@ -148,6 +155,64 @@ final class Btree {
 //     }
 // }
 
+  private void splitChild(int parent, int i, int fullChild) {
+    int newChild = initNode();
+    Node child = nodes[fullChild];
+    Node newNode = nodes[newChild];
+    newNode.size = NODESIZE / 2;
+
+    System.arraycopy(child.values, NODESIZE / 2, newNode.values, 0, NODESIZE / 2);
+    if (!isLeaf(child)) {
+        System.arraycopy(child.children, NODESIZE / 2, newNode.children, 0, NODESIZE / 2 + 1);
+    }
+
+    child.size = NODESIZE / 2;
+
+    System.arraycopy(nodes[parent].children, i + 1, nodes[parent].children, i + 2, nodes[parent].size - i);
+    nodes[parent].children[i + 1] = newChild;
+
+    System.arraycopy(nodes[parent].values, i, nodes[parent].values, i + 1, nodes[parent].size - i);
+    nodes[parent].values[i] = child.values[NODESIZE / 2 - 1]; // Adjusted to correctly position the median
+
+    nodes[parent].size++;
+  }
+
+
+  private int insertNonFull(int nodeIndex, int value) {
+    Node node = nodes[nodeIndex];
+    int i = node.size - 1;
+
+    if (isLeaf(node)) { // Use isLeaf method for leaf check
+        // Check if the value already exists
+        for (int j = 0; j < node.size; j++) {
+            if (node.values[j] == value) {
+                return -2; // Value already exists
+            }
+        }
+        // Insert the value into the correct position in a leaf node
+        while (i >= 0 && value < node.values[i]) {
+            node.values[i + 1] = node.values[i];
+            i--;
+        }
+        node.values[i + 1] = value;
+        node.size++;
+        return -1; // Value inserted successfully
+    } else {
+        // Determine the correct child node to descend into
+        while (i >= 0 && value < node.values[i]) {
+          i--;
+      }
+      i++;
+      if (nodes[node.children[i]].size == NODESIZE - 1) {
+          splitChild(nodeIndex, i, node.children[i]); // Correctly call splitChild without handling a return value
+          if (value > node.values[i]) {
+              i++;
+          }
+      }
+      // Recurse into the appropriate child node for insertion
+      return insertNonFull(node.children[i], value);
+    }
+  }
 
   /*
    * nodeInsert(int value, int pointer)
@@ -156,12 +221,20 @@ final class Btree {
    *            something else if the parent node has to be restructured
    */
   private int nodeInsert(int value, int pointer) {
-    //
-    //
-    // TODO
-    //
-    //
-    return XXX;
+    Node node = nodes[pointer];
+    if (node.size == NODESIZE - 1) {
+        if (pointer == root) {
+            int newRoot = initNode();
+            nodes[newRoot].children[0] = pointer;
+            splitChild(newRoot, 0, pointer);
+            root = newRoot;
+            return insertNonFull(newRoot, value); // Insert into new root after split
+        } else {
+            return pointer; // Need parent to handle split
+        }
+    } else {
+        return insertNonFull(pointer, value); // Direct insert into non-full node
+    }
   }
 
 
