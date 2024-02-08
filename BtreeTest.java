@@ -11,7 +11,9 @@ public final class BtreeTest {
     System.out.println("*** B+tree Testing ***\n");
 
     /** Test simple string array. */
-    test(new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 });
+    // test(new int[] { 1, 2});
+    test(new int[] { 1, 2, 3, 4, 5, 6});
+    // test(new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 });
     // test(new int[] { 10, 20, 30, 40, 50, 15, 60, 85, 95, 100, 11, 12, 13, 22, 32, 33, 34, 1, 2, 3, 4, 5, 6 });
 
     System.out.println("*** Finished Testing ***\n");
@@ -27,23 +29,28 @@ public final class BtreeTest {
     Btree tree = new Btree();
 
     System.out.println("Insert Values...");
-    for(int v : values) tree.Insert(v);
-    int size = tree.CntValues();
-    System.out.println("Stored Nodes: " + size + "\n");
+    for(int v : values) {
+      tree.Insert(v);
+      tree.DisplayEntileBTree();
+    }
+      
 
-    System.out.println("Finding Values...");
-    int found = 0;
-    for(int v : values) if(tree.Lookup(v)) found++;
-    System.out.println(found + " found, " + cntValues + " expected.\n");
+    // int size = tree.CntValues();
+    // System.out.println("Stored Nodes: " + size + "\n");
 
-    System.out.println("Reinsert Values... ");
-    for(int v : values) tree.Insert(v);
-    System.out.println(tree.CntValues() + " stored, " + size + " expected.\n");
+    // System.out.println("Finding Values...");
+    // int found = 0;
+    // for(int v : values) if(tree.Lookup(v)) found++;
+    // System.out.println(found + " found, " + cntValues + " expected.\n");
 
-    System.out.println("Finding Values...");
-    found = 0;
-    for(int v : values) if(tree.Lookup(v)) found++;
-    System.out.println(found + " found, " + cntValues + " expected.\n");
+    // System.out.println("Reinsert Values... ");
+    // for(int v : values) tree.Insert(v);
+    // System.out.println(tree.CntValues() + " stored, " + size + " expected.\n");
+
+    // System.out.println("Finding Values...");
+    // found = 0;
+    // for(int v : values) if(tree.Lookup(v)) found++;
+    // System.out.println(found + " found, " + cntValues + " expected.\n");
 
 
   }

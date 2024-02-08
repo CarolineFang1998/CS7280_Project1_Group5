@@ -9,6 +9,10 @@
  *
  */
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Queue;
+
 final class Btree {
 
   /* Size of Node. */
@@ -27,11 +31,10 @@ final class Btree {
   private int cntValues;
 
   /*
-   * B+ tree Constructor.
+   * B tree Constructor.
    */
   public Btree() {
     root = initNode();
-    nodes[root].children[0] = createLeaf();// TODO, check why create leaf????
   }
 
   /*********** B tree functions for Public ******************/
@@ -44,11 +47,6 @@ final class Btree {
     return nodeLookup(value, root);
   }
 
-  /*
-   * Insert(int value)
-   *    - If -1 is returned, the value is inserted and increase cntValues.
-   *    - If -2 is returned, the value already exists.
-   */
   public void Insert(int value) {
     int result = nodeInsert(value, root);
     if (result == -1) {
@@ -57,30 +55,59 @@ final class Btree {
     } else if (result == -2) {
         System.out.println("Insertion failed: " + value + " already exists.");
     }
+    // Handle other cases as necessary
+}
+
+  public void DisplayEntileBTree() {
+    System.out.println("-------------------------------------------------\n");
+    Display(this.root);
+    System.out.println("\nTotal number of values (cntValues): " + cntValues);
+    System.out.println("Total number of nodes (cntNodes): " + cntNodes);
+    System.out.println("-------------------------------------------------\n");
   }
 
   public void Display(int nodeId) {
-    Node node = nodes[nodeId];
-    if (node == null) return;
-    if (isLeaf(node)) { // Leaf node
-        for (int i = 0; i < node.size; i++) {
-            System.out.print(node.values[i] + " ");
-        }
-        System.out.println();
-    } else { // Internal node
-        for (int i = 0; i < node.size; i++) {
-            Display(node.children[i]);
-            System.out.print("[" + node.values[i] + "] ");
-        }
-        Display(node.children[node.size]);
-    }
+    if (nodeId < 0 || nodes[nodeId] == null)
+        return;
 
-    if (nodeId == root) {
-        // If this is the root node, print total counts at the end
-        System.out.println("\nTotal number of values (cntValues): " + cntValues);
-        System.out.println("Total number of nodes (cntNodes): " + cntNodes);
+    Queue<Integer> queue = new LinkedList<>();
+    queue.add(nodeId);
+
+    while (!queue.isEmpty()) {
+        int levelLength = queue.size();
+
+        for (int i = 0; i < levelLength; i++) {
+            int currentId = queue.poll();
+            Node currentNode = nodes[currentId];
+
+            // Print all values within the current node
+            System.out.print("[");
+            for (int val : currentNode.values) {                  
+              if (val != -1) { 
+                System.out.print(val + " ");
+              } else {
+                break;
+              }
+            } 
+            System.out.print("]");
+
+            System.out.print("(currentNode.childrenSize"+ currentNode.childrenSize + ")");
+            // Add child nodes of the current node to the queue for later processing
+            for (int j = 0; j <= NODESIZE; j++) { // Iterate through all possible children
+                int childId = currentNode.children[j];
+                if (childId != -1) { 
+                    queue.add(childId);
+                } else {
+                  break;
+                }
+            }
+
+            System.out.print("\t"); // Tab-space for separating nodes at the same level
+        }
+
+        System.out.println(); // Newline after each level is processed
     }
-  }
+}
 
   /*
    * CntValues()
@@ -169,33 +196,43 @@ final class Btree {
     Node child = nodes[fullChild];
     Node newNode = nodes[newChild];
     
-    // Set the size of the new node to half the maximum node size.
+    // The new node will have NODESIZE/2 values, excluding the median which is promoted.
     newNode.size = NODESIZE / 2;
 
-    // Copy the second half of the full child's values to the new node.
-    System.arraycopy(child.values, NODESIZE / 2, newNode.values, 0, NODESIZE / 2);
+    // TODO: do I need to think about odd/even size situation
+    // Copy the second half of the values to the new node, excluding the median.
+    System.arraycopy(child.values, NODESIZE / 2 + 1, newNode.values, 0, NODESIZE / 2);
 
-    // If the full child is not a leaf, copy the second half of its children to the new node.
+    
+
     if (!isLeaf(child)) {
-        System.arraycopy(child.children, NODESIZE / 2, newNode.children, 0, NODESIZE / 2 + 1);
+        // Also, adjust for non-leaf nodes by moving children.
+        System.arraycopy(child.children, NODESIZE / 2 + 1, newNode.children, 0, NODESIZE / 2 + 1);
+        Arrays.fill(child.children, NODESIZE / 2 + 1, NODESIZE + 1, -1); // Clear the second half of the full child's children references.
+        child.childrenSize = NODESIZE / 2; // child will take the the first half children including medium
+        newNode.childrenSize = NODESIZE / 2;
     }
-
-    // Resize the child node. if node size = 5, the new size should be 2.
+    
+    // Adjust the size of the original child node to exclude the median.
     child.size = NODESIZE / 2;
 
-    // Shift the parent's children references to make room for the new node.
+    // Make room for the new child in the parent node's children array.
     System.arraycopy(nodes[parent].children, i + 1, nodes[parent].children, i + 2, nodes[parent].size - i);
-    
     nodes[parent].children[i + 1] = newChild;
 
-    // Shift the parent's values to make room for the new value that will be promoted from the child.
+    // Make room for the median value to be promoted in the parent node's values array.
     System.arraycopy(nodes[parent].values, i, nodes[parent].values, i + 1, nodes[parent].size - i);
     
-    // Promote the median value
-    nodes[parent].values[i] = child.values[NODESIZE / 2 - 1];
+    // Promote the median value to the parent node.
+    nodes[parent].values[i] = child.values[NODESIZE / 2];
 
+    // Clear the values that were moved to the new node, including the median.
+    Arrays.fill(child.values, NODESIZE / 2, NODESIZE, -1);
+
+    // Increment the parent node's size.
     nodes[parent].size++;
   }
+
 
 
 
@@ -241,8 +278,7 @@ final class Btree {
   /*
    * nodeInsert(int value, int pointer)
    *    - -2 if the value already exists in the specified node
-   *    - -1 if the value is inserted into the node or
-   *            something else if the parent node has to be restructured
+   *    - -1 if the value is inserted into the node
    */
   private int nodeInsert(int value, int pointer) {
     Node currNode = nodes[pointer];
@@ -271,19 +307,12 @@ final class Btree {
    *         (Leaf node -> a missing children)
    */
   boolean isLeaf(Node node) {
-    // A node is considered a leaf if it has no children.
-    // check if the 'children' field is null.
-    if (node.children == null) {
-      return true;
-    }
-    
-    // check if the 'children' list is empty.
-    return node.children.length == 0;
+    return node.childrenSize == 0;
   }
   
 
   /*
-   * initNode(): Initialize a new node and returns the pointer.
+   * initNode(): Create a new node and returns the pointer.
    *    - return node pointer
    */
   int initNode() {
@@ -291,15 +320,19 @@ final class Btree {
     node.values = new int[NODESIZE];
     node.children =  new int[NODESIZE + 1];
 
+    // init node values and children into -1;
+    Arrays.fill(node.values, -1);
+    Arrays.fill(node.children, -1);
+
     checkSize();
     nodes[cntNodes] = node;
     return cntNodes++;
   }
 
-  /*
-   * createLeaf(): Creates a new leaf node and returns the pointer.
-   *    - return node pointer
-   */
+  // /*
+  //  * createLeaf(): Creates a new leaf node and returns the pointer.
+  //  *    - return node pointer
+  //  */
   int createLeaf() {
     Node node = new Node();
     node.values = new int[NODESIZE];
@@ -341,5 +374,6 @@ final class Node {
    */
   int size;
 
-  // TODO: need a constructor
+  /* Number of children*/
+  int childrenSize;
 }
