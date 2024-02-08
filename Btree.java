@@ -15,7 +15,7 @@ import java.util.Queue;
 
 final class Btree {
 
-  /* Size of Node. */
+  /* Size of Node. Mininum is 2. */
   private static final int NODESIZE = 5;
 
   /* Node array, initialized with length = 1. i.e. root node */
@@ -148,9 +148,6 @@ final class Btree {
     }
   }
 
-  // TODO: use "check size" when insert new node
-  // TODO: try to use createNode()
-
   /**
    * Splits the specified full child of a given parent node.
    * 
@@ -166,7 +163,7 @@ final class Btree {
     // The new node will have NODESIZE/2 values, excluding the median which is promoted.
     newNode.size = NODESIZE / 2;
 
-    // TODO: do I need to think about odd/even size situation
+    // TODO: Think about odd/even size situation
     // Copy the second half of the values to the new node, excluding the median.
     System.arraycopy(child.values, NODESIZE / 2 + 1, newNode.values, 0, NODESIZE / 2);
 
@@ -223,15 +220,15 @@ final class Btree {
     //   System.out.println("node.values[j]" + node.values[j]);
     // }
 
+    // Check if the value already exists 
+    for (int j = 0; j < node.size; j++) {
+      if (node.values[j] == value) {
+          return -2; // Value already exists
+      }
+  }
+
     // System.out.println("isLeaf?" + isLeaf(node));
     if (isLeaf(node)) { 
-        // Check if the value already exists 
-        for (int j = 0; j < node.size; j++) {
-            if (node.values[j] == value) {
-                return -2; // Value already exists
-            }
-        }
-
         // Insert the value into the correct position in a leaf node
         while (i >= 0 && value < node.values[i]) {
             node.values[i + 1] = node.values[i];
