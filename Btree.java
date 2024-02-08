@@ -91,7 +91,8 @@ final class Btree {
             } 
             System.out.print("]");
 
-            System.out.print("(currentNode.childrenSize"+ currentNode.childrenSize + ")");
+            // System.out.print("(childrenSize"+ currentNode.childrenSize + ")");
+            // System.out.print("(size"+ currentNode.size + ")");
             // Add child nodes of the current node to the queue for later processing
             for (int j = 0; j <= NODESIZE; j++) { // Iterate through all possible children
                 int childId = currentNode.children[j];
@@ -129,12 +130,12 @@ final class Btree {
     int i = 0;
 
     // Iterate through keys in the node to find the smallest index i such that value <= node.values[i]
-    while (i < node.size && value > node.values[i]) {
+    while (i >= 0 && i < node.size && value > node.values[i]) {
         i++;
     }
 
     // If the value matches the key at index i in the node
-    if (i < node.size && value == node.values[i]) {
+    if (i >= 0 && i < node.size && value == node.values[i]) {
         return true; // The value is found
     }
 
@@ -146,40 +147,6 @@ final class Btree {
         return nodeLookup(value, node.children[i]);
     }
   }
-
-  // TODO: might use binary search for nodeLookup:
-//   private boolean nodeLookup(int value, int pointer) {
-//     Node node = nodes[pointer];
-    
-//     // Perform a binary search to find the smallest index i such that value <= node.values[i]
-//     int left = 0;
-//     int right = node.size - 1;
-//     int i = 0;
-
-//     while (left <= right) {
-//         int mid = left + (right - left) / 2;
-
-//         if (node.values[mid] == value) {
-//             return true; // The value is found
-//         } else if (node.values[mid] < value) {
-//             left = mid + 1;
-//         } else {
-//             i = mid; // Record the position to recurse on if the value is not found
-//             right = mid - 1;
-//         }
-//     }
-
-//     // If the node is a leaf, then the search is unsuccessful
-//     if (isLeaf(node)) {
-//         return false;
-//     } else {
-//         // Recur to search the appropriate subtree
-//         // Note: The 'children' array holds pointers to the children nodes
-//         // We assume that children nodes exist and are loaded in memory
-//         // In an actual disk-based B-tree implementation, you would perform a disk read operation here
-//         return nodeLookup(value, node.children[i]);
-//     }
-// }
 
   // TODO: use "check size" when insert new node
   // TODO: try to use createNode()
@@ -203,15 +170,22 @@ final class Btree {
     // Copy the second half of the values to the new node, excluding the median.
     System.arraycopy(child.values, NODESIZE / 2 + 1, newNode.values, 0, NODESIZE / 2);
 
-    
-
+    // if (!isLeaf(child)) {
+    //     // Also, adjust for non-leaf nodes by moving children.
+    //     System.arraycopy(child.children, NODESIZE / 2 + 1, newNode.children, 0, NODESIZE / 2 + 1);
+    //     Arrays.fill(child.children, NODESIZE / 2 + 1, NODESIZE + 1, -1); // Clear the second half of the full child's children references.
+    //     child.childrenSize = NODESIZE / 2; // child will take the the first half children including medium
+    //     newNode.childrenSize = NODESIZE / 2;
+    // }
     if (!isLeaf(child)) {
-        // Also, adjust for non-leaf nodes by moving children.
-        System.arraycopy(child.children, NODESIZE / 2 + 1, newNode.children, 0, NODESIZE / 2 + 1);
-        Arrays.fill(child.children, NODESIZE / 2 + 1, NODESIZE + 1, -1); // Clear the second half of the full child's children references.
-        child.childrenSize = NODESIZE / 2; // child will take the the first half children including medium
-        newNode.childrenSize = NODESIZE / 2;
-    }
+      // Handling children for non-leaf nodes
+      int halfChildrenSize = (child.childrenSize ) / 2; // Exclude the median child for division
+      newNode.childrenSize = halfChildrenSize;
+      child.childrenSize = child.childrenSize - halfChildrenSize - 1; // Account for the child kept by the child node
+
+      System.arraycopy(child.children, NODESIZE / 2 + 1, newNode.children, 0, newNode.childrenSize);
+      Arrays.fill(child.children, NODESIZE / 2 + 1, NODESIZE + 1, -1); // Clear moved children references
+  }
     
     // Adjust the size of the original child node to exclude the median.
     child.size = NODESIZE / 2;
@@ -231,17 +205,26 @@ final class Btree {
 
     // Increment the parent node's size.
     nodes[parent].size++;
+    nodes[parent].childrenSize++;
   }
 
 
 
 
   private int insertNonFull(int nodeIndex, int value) {
+    // System.out.println("root" + nodes[root].values[0]);
+    // System.out.println("value" + value);
     Node node = nodes[nodeIndex];
     int i = node.size - 1;
+    // System.out.println("node.size " + node.size);
 
+    // for(int j = 0; j < 5; j++) {
+      
+    //   System.out.println("node.values[j]" + node.values[j]);
+    // }
+
+    // System.out.println("isLeaf?" + isLeaf(node));
     if (isLeaf(node)) { 
-        // TODO: might change to binary search
         // Check if the value already exists 
         for (int j = 0; j < node.size; j++) {
             if (node.values[j] == value) {
@@ -261,9 +244,21 @@ final class Btree {
 
     // Determine the correct child node to descend into
     while (i >= 0 && value < node.values[i]) {
+      // System.out.println("while node.values[i]" + node.values[i]);
       i--;
     }
     i++;
+
+    // for(int j=0; j< node.size; j++) {
+    //   System.out.print("[");
+
+    //   for(int k=0; k< nodes[node.children[j]].size; k++) {
+    //     System.out.print("" + nodes[node.children[j]].values[k] + " ");
+    //   }
+    //   System.out.print("]");
+    // }
+
+    // System.out.println("nodeIndex2.1 " + i + " "+ node.children[i]);
     // if the node is full, split the node
     if (nodes[node.children[i]].size == NODESIZE) { 
         splitChild(nodeIndex, i, node.children[i]); 
@@ -287,15 +282,15 @@ final class Btree {
           // create a new root and split the old root
             int newRoot = initNode();
             nodes[newRoot].children[0] = pointer;
+            nodes[newRoot].childrenSize++;
             splitChild(newRoot, 0, pointer);
             root = newRoot;
             return insertNonFull(newRoot, value); // Insert into new root after split
         } else {
             return pointer; // Need parent to handle split
         }
-    } else {
-        return insertNonFull(pointer, value); // Direct insert into non-full node
     }
+    return insertNonFull(pointer, value); // Direct insert into non-full node
   }
 
 

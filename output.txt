@@ -1,0 +1,232 @@
+*** B+tree Testing ***
+
+Create B-tree with 23 Values...
+
+Insert Values...
+Insertion complete: 10 has been added.
+-------------------------------------------------
+
+[10 ]	
+
+Total number of values (cntValues): 1
+Total number of nodes (cntNodes): 1
+-------------------------------------------------
+
+Insertion complete: 20 has been added.
+-------------------------------------------------
+
+[10 20 ]	
+
+Total number of values (cntValues): 2
+Total number of nodes (cntNodes): 1
+-------------------------------------------------
+
+Insertion complete: 30 has been added.
+-------------------------------------------------
+
+[10 20 30 ]	
+
+Total number of values (cntValues): 3
+Total number of nodes (cntNodes): 1
+-------------------------------------------------
+
+Insertion complete: 40 has been added.
+-------------------------------------------------
+
+[10 20 30 40 ]	
+
+Total number of values (cntValues): 4
+Total number of nodes (cntNodes): 1
+-------------------------------------------------
+
+Insertion complete: 50 has been added.
+-------------------------------------------------
+
+[10 20 30 40 50 ]	
+
+Total number of values (cntValues): 5
+Total number of nodes (cntNodes): 1
+-------------------------------------------------
+
+Insertion complete: 15 has been added.
+-------------------------------------------------
+
+[30 ]	
+[10 15 20 ]	[40 50 ]	
+
+Total number of values (cntValues): 6
+Total number of nodes (cntNodes): 3
+-------------------------------------------------
+
+Insertion complete: 60 has been added.
+-------------------------------------------------
+
+[30 ]	
+[10 15 20 ]	[40 50 60 ]	
+
+Total number of values (cntValues): 7
+Total number of nodes (cntNodes): 3
+-------------------------------------------------
+
+Insertion complete: 85 has been added.
+-------------------------------------------------
+
+[30 ]	
+[10 15 20 ]	[40 50 60 85 ]	
+
+Total number of values (cntValues): 8
+Total number of nodes (cntNodes): 3
+-------------------------------------------------
+
+Insertion complete: 95 has been added.
+-------------------------------------------------
+
+[30 ]	
+[10 15 20 ]	[40 50 60 85 95 ]	
+
+Total number of values (cntValues): 9
+Total number of nodes (cntNodes): 3
+-------------------------------------------------
+
+Insertion complete: 100 has been added.
+-------------------------------------------------
+
+[30 60 ]	
+[10 15 20 ]	[40 50 ]	[85 95 100 ]	
+
+Total number of values (cntValues): 10
+Total number of nodes (cntNodes): 4
+-------------------------------------------------
+
+Insertion complete: 11 has been added.
+-------------------------------------------------
+
+[30 60 ]	
+[10 11 15 20 ]	[40 50 ]	[85 95 100 ]	
+
+Total number of values (cntValues): 11
+Total number of nodes (cntNodes): 4
+-------------------------------------------------
+
+Insertion complete: 12 has been added.
+-------------------------------------------------
+
+[30 60 ]	
+[10 11 12 15 20 ]	[40 50 ]	[85 95 100 ]	
+
+Total number of values (cntValues): 12
+Total number of nodes (cntNodes): 4
+-------------------------------------------------
+
+Insertion complete: 13 has been added.
+-------------------------------------------------
+
+[12 30 60 ]	
+[10 11 ]	[13 15 20 ]	[40 50 ]	[85 95 100 ]	
+
+Total number of values (cntValues): 13
+Total number of nodes (cntNodes): 5
+-------------------------------------------------
+
+Insertion complete: 22 has been added.
+-------------------------------------------------
+
+[12 30 60 ]	
+[10 11 ]	[13 15 20 22 ]	[40 50 ]	[85 95 100 ]	
+
+Total number of values (cntValues): 14
+Total number of nodes (cntNodes): 5
+-------------------------------------------------
+
+Insertion complete: 32 has been added.
+-------------------------------------------------
+
+[12 30 60 ]	
+[10 11 ]	[13 15 20 22 ]	[32 40 50 ]	[85 95 100 ]	
+
+Total number of values (cntValues): 15
+Total number of nodes (cntNodes): 5
+-------------------------------------------------
+
+Insertion complete: 33 has been added.
+-------------------------------------------------
+
+[12 30 60 ]	
+[10 11 ]	[13 15 20 22 ]	[32 33 40 50 ]	[85 95 100 ]	
+
+Total number of values (cntValues): 16
+Total number of nodes (cntNodes): 5
+-------------------------------------------------
+
+Insertion complete: 34 has been added.
+-------------------------------------------------
+
+[12 30 60 ]	
+[10 11 ]	[13 15 20 22 ]	[32 33 34 40 50 ]	[85 95 100 ]	
+
+Total number of values (cntValues): 17
+Total number of nodes (cntNodes): 5
+-------------------------------------------------
+
+Insertion complete: 1 has been added.
+-------------------------------------------------
+
+[12 30 60 ]	
+[1 10 11 ]	[13 15 20 22 ]	[32 33 34 40 50 ]	[85 95 100 ]	
+
+Total number of values (cntValues): 18
+Total number of nodes (cntNodes): 5
+-------------------------------------------------
+
+Insertion complete: 2 has been added.
+-------------------------------------------------
+
+[12 30 60 ]	
+[1 2 10 11 ]	[13 15 20 22 ]	[32 33 34 40 50 ]	[85 95 100 ]	
+
+Total number of values (cntValues): 19
+Total number of nodes (cntNodes): 5
+-------------------------------------------------
+
+Insertion complete: 3 has been added.
+-------------------------------------------------
+
+[12 30 60 ]	
+[1 2 3 10 11 ]	[13 15 20 22 ]	[32 33 34 40 50 ]	[85 95 100 ]	
+
+Total number of values (cntValues): 20
+Total number of nodes (cntNodes): 5
+-------------------------------------------------
+
+Insertion complete: 4 has been added.
+-------------------------------------------------
+
+[3 12 30 60 ]	
+[1 2 ]	[4 10 11 ]	[13 15 20 22 ]	[32 33 34 40 50 ]	[85 95 100 ]	
+
+Total number of values (cntValues): 21
+Total number of nodes (cntNodes): 6
+-------------------------------------------------
+
+Insertion complete: 5 has been added.
+-------------------------------------------------
+
+[3 12 30 60 ]	
+[1 2 ]	[4 5 10 11 ]	[13 15 20 22 ]	[32 33 34 40 50 ]	[85 95 100 ]	
+
+Total number of values (cntValues): 22
+Total number of nodes (cntNodes): 6
+-------------------------------------------------
+
+Insertion complete: 6 has been added.
+-------------------------------------------------
+
+[3 12 30 60 ]	
+[1 2 ]	[4 5 6 10 11 ]	[13 15 20 22 ]	[32 33 34 40 50 ]	[85 95 100 ]	
+
+Total number of values (cntValues): 23
+Total number of nodes (cntNodes): 6
+-------------------------------------------------
+
+*** Finished Testing ***
+
