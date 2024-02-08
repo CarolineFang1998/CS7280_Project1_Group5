@@ -2,3 +2,5 @@
 *.class
 *.swp
 output.txt
+out/
+*.iml
