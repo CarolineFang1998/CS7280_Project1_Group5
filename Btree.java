@@ -16,7 +16,7 @@ import java.util.Queue;
 final class Btree {
 
   /* Size of Node. Mininum is 2. */
-  private static final int NODESIZE = 5;
+  private static final int NODESIZE = 2;
 
   /* Node array, initialized with length = 1. i.e. root node */
   private Node[] nodes = new Node[1];
@@ -155,117 +155,81 @@ final class Btree {
    * @param i        The index within the parent node's children array where the full child is located.
    * @param fullChild The pointer of the full child node in the nodes array that needs to be split.
    */
-  private void splitChild(int parent, int i, int fullChild) {
+
+  private void splitChild(int parent, int childIndex, int fullChild) {
     int newChild = initNode();
     Node child = nodes[fullChild];
     Node newNode = nodes[newChild];
-    
-    // The new node will have NODESIZE/2 values, excluding the median which is promoted.
-    newNode.size = NODESIZE / 2;
 
-    // TODO: Think about odd/even size situation
-    // Copy the second half of the values to the new node, excluding the median.
-    System.arraycopy(child.values, NODESIZE / 2 + 1, newNode.values, 0, NODESIZE / 2);
+    // Calculate the number of values to move to the new node.
+    // For even NODESIZE, this will be NODESIZE/2.
+    // For odd NODESIZE, this will be NODESIZE/2 + 1, ensuring the median moves up.
+    int splitIndex = (NODESIZE - 1) / 2; // Index of the median value for odd NODESIZE, left median for even.
+    int numberOfValuesToMove = NODESIZE - splitIndex - 1; // Adjust based on whether NODESIZE is even or odd.
 
-    // if (!isLeaf(child)) {
-    //     // Also, adjust for non-leaf nodes by moving children.
-    //     System.arraycopy(child.children, NODESIZE / 2 + 1, newNode.children, 0, NODESIZE / 2 + 1);
-    //     Arrays.fill(child.children, NODESIZE / 2 + 1, NODESIZE + 1, -1); // Clear the second half of the full child's children references.
-    //     child.childrenSize = NODESIZE / 2; // child will take the the first half children including medium
-    //     newNode.childrenSize = NODESIZE / 2;
-    // }
+    // Distribute the second half (or the last NODESIZE/2 elements for even, NODESIZE/2 + 1 for odd) to the new node.
+    System.arraycopy(child.values, splitIndex + 1, newNode.values, 0, numberOfValuesToMove);
+    Arrays.fill(child.values, splitIndex + 1, NODESIZE, -1); // Clear moved values
+
+    newNode.size = numberOfValuesToMove;
+    child.size = splitIndex;
+
     if (!isLeaf(child)) {
-      // Handling children for non-leaf nodes
-      int halfChildrenSize = (child.childrenSize ) / 2; // Exclude the median child for division
-      newNode.childrenSize = halfChildrenSize;
-      child.childrenSize = child.childrenSize - halfChildrenSize - 1; // Account for the child kept by the child node
+        // If the child is not a leaf, distribute the corresponding children.
+        System.arraycopy(child.children, splitIndex + 1, newNode.children, 0, numberOfValuesToMove + 1);
+        Arrays.fill(child.children, splitIndex + 1, NODESIZE + 1, -1); // Clear moved children references
 
-      System.arraycopy(child.children, NODESIZE / 2 + 1, newNode.children, 0, newNode.childrenSize);
-      Arrays.fill(child.children, NODESIZE / 2 + 1, NODESIZE + 1, -1); // Clear moved children references
-  }
-    
-    // Adjust the size of the original child node to exclude the median.
-    child.size = NODESIZE / 2;
+        newNode.childrenSize = numberOfValuesToMove + 1;
+        child.childrenSize = splitIndex + 1;
+    }
 
-    // Make room for the new child in the parent node's children array.
-    System.arraycopy(nodes[parent].children, i + 1, nodes[parent].children, i + 2, nodes[parent].size - i);
-    nodes[parent].children[i + 1] = newChild;
+    // Make room for the new child pointer in the parent node.
+    System.arraycopy(nodes[parent].children, childIndex + 1, nodes[parent].children, childIndex + 2, nodes[parent].size - childIndex);
+    nodes[parent].children[childIndex + 1] = newChild;
 
-    // Make room for the median value to be promoted in the parent node's values array.
-    System.arraycopy(nodes[parent].values, i, nodes[parent].values, i + 1, nodes[parent].size - i);
-    
-    // Promote the median value to the parent node.
-    nodes[parent].values[i] = child.values[NODESIZE / 2];
+    // Move the median value to the parent node.
+    System.arraycopy(nodes[parent].values, childIndex, nodes[parent].values, childIndex + 1, nodes[parent].size - childIndex);
+    nodes[parent].values[childIndex] = child.values[splitIndex];
+    Arrays.fill(child.values, splitIndex, splitIndex + 1, -1); // Clear the median value
 
-    // Clear the values that were moved to the new node, including the median.
-    Arrays.fill(child.values, NODESIZE / 2, NODESIZE, -1);
-
-    // Increment the parent node's size.
+    // Update the size of the parent node.
     nodes[parent].size++;
     nodes[parent].childrenSize++;
-  }
-
-
-
+}
 
   private int insertNonFull(int nodeIndex, int value) {
-    // System.out.println("root" + nodes[root].values[0]);
-    // System.out.println("value" + value);
     Node node = nodes[nodeIndex];
     int i = node.size - 1;
-    // System.out.println("node.size " + node.size);
 
-    // for(int j = 0; j < 5; j++) {
-      
-    //   System.out.println("node.values[j]" + node.values[j]);
-    // }
-
-    // Check if the value already exists 
-    for (int j = 0; j < node.size; j++) {
-      if (node.values[j] == value) {
-          return -2; // Value already exists
-      }
-  }
-
-    // System.out.println("isLeaf?" + isLeaf(node));
-    if (isLeaf(node)) { 
-        // Insert the value into the correct position in a leaf node
+    if (isLeaf(node)) {
+        // Insert the new value into the correct position in a leaf node.
         while (i >= 0 && value < node.values[i]) {
             node.values[i + 1] = node.values[i];
             i--;
         }
         node.values[i + 1] = value;
         node.size++;
-        return -1; // Value inserted successfully
-    } 
-
-    // Determine the correct child node to descend into
-    while (i >= 0 && value < node.values[i]) {
-      // System.out.println("while node.values[i]" + node.values[i]);
-      i--;
-    }
-    i++;
-
-    // for(int j=0; j< node.size; j++) {
-    //   System.out.print("[");
-
-    //   for(int k=0; k< nodes[node.children[j]].size; k++) {
-    //     System.out.print("" + nodes[node.children[j]].values[k] + " ");
-    //   }
-    //   System.out.print("]");
-    // }
-
-    // System.out.println("nodeIndex2.1 " + i + " "+ node.children[i]);
-    // if the node is full, split the node
-    if (nodes[node.children[i]].size == NODESIZE) { 
-        splitChild(nodeIndex, i, node.children[i]); 
-        if (value > node.values[i]) {
-            i++;
+        return -1; // Indicate successful insertion.
+    } else {
+        // Find the child node that should receive the new value.
+        while (i >= 0 && value < node.values[i]) {
+            i--;
         }
+        i++;
+
+        if (nodes[node.children[i]].size == NODESIZE) {
+            // If the found child is full, split it.
+            splitChild(nodeIndex, i, node.children[i]);
+            
+            // After splitting, determine which of the two new children should receive the new value.
+            if (value > node.values[i]) {
+                i++;
+            }
+        }
+        return insertNonFull(node.children[i], value); // Recursively insert into the correct child node.
     }
-    // Recurse into the appropriate child node for insertion
-    return insertNonFull(node.children[i], value);
-  }
+}
+
 
   /*
    * nodeInsert(int value, int pointer)
