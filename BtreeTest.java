@@ -31,7 +31,8 @@ public final class BtreeTest {
     // }
     // test(largeTest);
 
-    test(new int[] { 10, 20, 30, 40, 50, 60 });
+//    test(new int[] { 10, 20, 30, 40, 50, 60 });
+    test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
 
 
     System.out.println("*** Finished Testing ***\n");

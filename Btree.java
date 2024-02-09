@@ -16,7 +16,7 @@ import java.util.Queue;
 final class Btree {
 
   /* Size of Node. Mininum is 2. */
-  private static final int NODESIZE = 5;
+  private static final int NODESIZE = 4;
 
   /* Node array, initialized with length = 1. i.e. root node */
   private Node[] nodes = new Node[1];
@@ -159,13 +159,15 @@ final class Btree {
     int newChild = initNode();
     Node child = nodes[fullChild];
     Node newNode = nodes[newChild];
-    
+
     // The new node will have NODESIZE/2 values, excluding the median which is promoted.
     newNode.size = NODESIZE / 2;
+    System.out.println("newNode.size" + newNode.size);
 
     // TODO: Think about odd/even size situation
     // Copy the second half of the values to the new node, excluding the median.
-    System.arraycopy(child.values, NODESIZE / 2 + 1, newNode.values, 0, NODESIZE / 2);
+    System.arraycopy(child.values, (NODESIZE-1) / 2 + 1, newNode.values, 0, NODESIZE / 2);
+
 
     // if (!isLeaf(child)) {
     //     // Also, adjust for non-leaf nodes by moving children.
@@ -176,6 +178,7 @@ final class Btree {
     // }
     if (!isLeaf(child)) {
       // Handling children for non-leaf nodes
+
       int halfChildrenSize = (child.childrenSize ) / 2; // Exclude the median child for division
       newNode.childrenSize = halfChildrenSize;
       child.childrenSize = child.childrenSize - halfChildrenSize - 1; // Account for the child kept by the child node
@@ -183,7 +186,7 @@ final class Btree {
       System.arraycopy(child.children, NODESIZE / 2 + 1, newNode.children, 0, newNode.childrenSize);
       Arrays.fill(child.children, NODESIZE / 2 + 1, NODESIZE + 1, -1); // Clear moved children references
   }
-    
+
     // Adjust the size of the original child node to exclude the median.
     child.size = NODESIZE / 2;
 
@@ -193,12 +196,12 @@ final class Btree {
 
     // Make room for the median value to be promoted in the parent node's values array.
     System.arraycopy(nodes[parent].values, i, nodes[parent].values, i + 1, nodes[parent].size - i);
-    
+
     // Promote the median value to the parent node.
-    nodes[parent].values[i] = child.values[NODESIZE / 2];
+    nodes[parent].values[i] = child.values[(NODESIZE-1) / 2];
 
     // Clear the values that were moved to the new node, including the median.
-    Arrays.fill(child.values, NODESIZE / 2, NODESIZE, -1);
+    Arrays.fill(child.values, (NODESIZE-1) / 2, NODESIZE, -1);
 
     // Increment the parent node's size.
     nodes[parent].size++;
@@ -282,7 +285,9 @@ final class Btree {
             nodes[newRoot].childrenSize++;
             splitChild(newRoot, 0, pointer);
             root = newRoot;
-            return insertNonFull(newRoot, value); // Insert into new root after split
+            // Recurse to insert the value into the non-full node
+            return insertNonFull(newRoot, value);
+
         } else {
             return pointer; // Need parent to handle split
         }
