@@ -16,7 +16,7 @@ import java.util.Queue;
 final class Btree {
 
   /* Size of Node. Mininum is 2. */
-  private static final int NODESIZE = 5;
+  private static final int NODESIZE = 3;
 
   /* Node array, initialized with length = 1. i.e. root node */
   private Node[] nodes = new Node[1];
@@ -44,7 +44,7 @@ final class Btree {
    *   - True if the value was found.
    */
   public boolean Lookup(int value) {
-    return nodeLookup(value, root);
+    return nodeLookup(value, root, "");
   }
 
   public void Insert(int value) {
@@ -71,10 +71,12 @@ final class Btree {
 
     Queue<Integer> queue = new LinkedList<>();
     queue.add(nodeId);
+    int level = 0;
 
     while (!queue.isEmpty()) {
         int levelLength = queue.size();
-
+        System.out.print("L-"+level+": ");
+        level++;
         for (int i = 0; i < levelLength; i++) {
             int currentId = queue.poll();
             Node currentNode = nodes[currentId];
@@ -127,9 +129,10 @@ final class Btree {
    *    - True if the value was found in the specified node.
    *
    */
-  private boolean nodeLookup(int value, int pointer) {
+  private boolean nodeLookup(int value, int pointer, String s) {
     Node node = nodes[pointer];
     int i = 0;
+    s += "" + pointer;
 
     // Iterate through keys in the node to find the smallest index i such that value <= node.values[i]
     while (i >= 0 && i < node.size && value > node.values[i]) {
@@ -138,7 +141,7 @@ final class Btree {
 
     // If the value matches the key at index i in the node
     if (i >= 0 && i < node.size && value == node.values[i]) {
-        System.out.println("Founded " + value + " at node " + pointer );
+        System.out.println("Founded " + value + " Path: " + s );
         return true; // The value is found
     }
 
@@ -147,8 +150,9 @@ final class Btree {
       System.out.println( "No key found");
       return false;
     } else {
+       s += " -> " ;
       // Recur to search the appropriate subtree
-        return nodeLookup(value, node.children[i]);
+        return nodeLookup(value, node.children[i], s);
     }
   }
     private void splitChild(int parent, int i, int fullChild) {
