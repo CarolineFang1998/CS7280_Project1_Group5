@@ -16,7 +16,7 @@ import java.util.Queue;
 final class Btree {
 
   /* Size of Node. Mininum is 2. */
-  private static final int NODESIZE = 4;
+  private static final int NODESIZE = 5;
 
   /* Node array, initialized with length = 1. i.e. root node */
   private Node[] nodes = new Node[1];
@@ -55,11 +55,10 @@ final class Btree {
     } else if (result == -2) {
         System.out.println("Insertion failed: " + value + " already exists.");
     }
-    // Handle other cases as necessary
 }
 
   public void DisplayEntileBTree() {
-    System.out.println("-------------------------------------------------\n");
+    System.out.println("--------------Display Entile Tree----------------\n");
     Display(this.root);
     System.out.println("\nTotal number of values (cntValues): " + cntValues);
     System.out.println("Total number of nodes (cntNodes): " + cntNodes);
@@ -81,18 +80,21 @@ final class Btree {
             Node currentNode = nodes[currentId];
 
             // Print all values within the current node
-            System.out.print("[");
-            for (int val : currentNode.values) {                  
+            System.out.print(currentId+"[");
+            int count = 0;
+            for (int val : currentNode.values) {    
+              if (count > 0) {
+                System.out.print(",");
+              }              
               if (val != -1) { 
-                System.out.print(val + " ");
+                System.out.print(val );
               } else {
-                break;
+                System.out.print(" ");
               }
+              count++;
             } 
             System.out.print("]");
 
-            // System.out.print("(childrenSize"+ currentNode.childrenSize + ")");
-            // System.out.print("(size"+ currentNode.size + ")");
             // Add child nodes of the current node to the queue for later processing
             for (int j = 0; j <= NODESIZE; j++) { // Iterate through all possible children
                 int childId = currentNode.children[j];
@@ -136,14 +138,16 @@ final class Btree {
 
     // If the value matches the key at index i in the node
     if (i >= 0 && i < node.size && value == node.values[i]) {
+        System.out.println("Founded " + value + " at node " + pointer );
         return true; // The value is found
     }
 
     // If the node is a leaf, then the search is unsuccessful
     if (isLeaf(node)) {
-        return false;
+      System.out.println( "No key found");
+      return false;
     } else {
-        // Recur to search the appropriate subtree
+      // Recur to search the appropriate subtree
         return nodeLookup(value, node.children[i]);
     }
   }
@@ -198,74 +202,9 @@ final class Btree {
    * @param i        The index within the parent node's children array where the full child is located.
    * @param fullChild The pointer of the full child node in the nodes array that needs to be split.
    */
-//  private void splitChild(int parent, int i, int fullChild) {
-//    int newChild = initNode();
-//    Node child = nodes[fullChild];
-//    Node newNode = nodes[newChild];
-//
-//    // The new node will have NODESIZE/2 values, excluding the median which is promoted.
-//    newNode.size = NODESIZE / 2;
-//    System.out.println("newNode.size" + newNode.size);
-//
-//    // TODO: Think about odd/even size situation
-//    // Copy the second half of the values to the new node, excluding the median.
-//    System.arraycopy(child.values, (NODESIZE-1) / 2 + 1, newNode.values, 0, NODESIZE / 2);
-//    System.out.println("newNode.values[0]" + Arrays.toString(newNode.values));
-//
-//
-//    // if (!isLeaf(child)) {
-//    //     // Also, adjust for non-leaf nodes by moving children.
-//    //     System.arraycopy(child.children, NODESIZE / 2 + 1, newNode.children, 0, NODESIZE / 2 + 1);
-//    //     Arrays.fill(child.children, NODESIZE / 2 + 1, NODESIZE + 1, -1); // Clear the second half of the full child's children references.
-//    //     child.childrenSize = NODESIZE / 2; // child will take the the first half children including medium
-//    //     newNode.childrenSize = NODESIZE / 2;
-//    // }
-//    if (!isLeaf(child)) {
-//      // Handling children for non-leaf nodes
-//
-//      int halfChildrenSize = (child.childrenSize ) / 2; // Exclude the median child for division
-//      newNode.childrenSize = halfChildrenSize;
-//      child.childrenSize = child.childrenSize - halfChildrenSize - 1; // Account for the child kept by the child node
-//
-//      System.arraycopy(child.children, (NODESIZE-1) / 2 + 1, newNode.children, 0, newNode.childrenSize);
-//      Arrays.fill(child.children, (NODESIZE-1) / 2 + 1, NODESIZE + 1, -1); // Clear moved children references
-//  }
-//
-//    // Adjust the size of the original child node to exclude the median.
-//    child.size = NODESIZE / 2;
-//
-//    // Make room for the new child in the parent node's children array.
-//    System.arraycopy(nodes[parent].children, i + 1, nodes[parent].children, i + 2, nodes[parent].size - i);
-//    nodes[parent].children[i + 1] = newChild;
-//
-//    // Make room for the median value to be promoted in the parent node's values array.
-//    System.arraycopy(nodes[parent].values, i, nodes[parent].values, i + 1, nodes[parent].size - i);
-//
-//    // Promote the median value to the parent node.
-//    nodes[parent].values[i] = child.values[(NODESIZE-1) / 2];
-//
-//    // Clear the values that were moved to the new node, including the median.
-//    Arrays.fill(child.values, (NODESIZE-1) / 2, NODESIZE, -1);
-//
-//    // Increment the parent node's size.
-//    nodes[parent].size++;
-//    nodes[parent].childrenSize++;
-//  }
-//
-
-
-
   private int insertNonFull(int nodeIndex, int value) {
-    // System.out.println("root" + nodes[root].values[0]);
-    // System.out.println("value" + value);
     Node node = nodes[nodeIndex];
     int i = node.size - 1;
-    // System.out.println("node.size " + node.size);
-
-    // for(int j = 0; j < 5; j++) {
-      
-    //   System.out.println("node.values[j]" + node.values[j]);
-    // }
 
     // Check if the value already exists 
     for (int j = 0; j < node.size; j++) {
@@ -288,24 +227,12 @@ final class Btree {
 
     // Determine the correct child node to descend into
     while (i >= 0 && value < node.values[i]) {
-      // System.out.println("while node.values[i]" + node.values[i]);
       i--;
     }
     i++;
 
-    // for(int j=0; j< node.size; j++) {
-    //   System.out.print("[");
-
-    //   for(int k=0; k< nodes[node.children[j]].size; k++) {
-    //     System.out.print("" + nodes[node.children[j]].values[k] + " ");
-    //   }
-    //   System.out.print("]");
-    // }
-
-    // System.out.println("nodeIndex2.1 " + i + " "+ node.children[i]);
     // if the node is full, split the node
     if (nodes[node.children[i]].size == NODESIZE) {
-        System.out.println("nodeIndex " + i + " "+ node.children[i]);
         splitChild(nodeIndex, i, node.children[i]); 
         if (value > node.values[i]) {
             i++;
@@ -419,4 +346,3 @@ final class Node {
   /* Number of children*/
   int childrenSize;
 }
-//TODO: even size situation and general size situation
