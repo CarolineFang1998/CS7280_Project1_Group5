@@ -16,7 +16,7 @@ import java.util.Queue;
 final class Btree {
 
   /* Size of Node. Mininum is 2. */
-  private static final int NODESIZE = 3;
+  private static final int NODESIZE = 4;
 
   /* Node array, initialized with length = 1. i.e. root node */
   private Node[] nodes = new Node[1];
@@ -31,7 +31,8 @@ final class Btree {
   private int cntValues;
 
   /*
-   * B tree Constructor.
+   * Constructor for the B-tree.
+   * Initializes the tree by creating the root node.
    */
   public Btree() {
     root = initNode();
@@ -40,13 +41,18 @@ final class Btree {
   /*********** B tree functions for Public ******************/
 
   /*
-   * Lookup(int value)
-   *   - True if the value was found.
+   * Performs a lookup for a value in the B-tree.
+   * @param value The value to search for.
+   * @return True if the value exists in the B-tree, false otherwise.
    */
   public boolean Lookup(int value) {
     return nodeLookup(value, root, "");
   }
 
+  /*
+   * Inserts a value into the B-tree.
+   * @param value The value to insert.
+   */
   public void Insert(int value) {
     int result = nodeInsert(value, root);
     if (result == -1) {
@@ -57,6 +63,9 @@ final class Btree {
     }
 }
 
+  /*
+   * Displays the entire B-tree structure.
+   */
   public void DisplayEntileBTree() {
     System.out.println("--------------Display Entile Tree----------------\n");
     Display(this.root);
@@ -65,6 +74,10 @@ final class Btree {
     System.out.println("-------------------------------------------------\n");
   }
 
+  /*
+   * Displays the B-tree structure starting from a specific node.
+   * @param nodeId The pointer of the node from which to start the display.
+   */
   public void Display(int nodeId) {
     if (nodeId < 0 || nodes[nodeId] == null)
         return;
@@ -112,7 +125,7 @@ final class Btree {
 
         System.out.println(); // Newline after each level is processed
     }
-}
+  }
 
   /*
    * CntValues()
@@ -124,10 +137,17 @@ final class Btree {
 
   /*********** B-tree functions for Internal  ******************/
 
-  /*
-   * nodeLookup(int value, int pointer)
-   *    - True if the value was found in the specified node.
-   *
+  /**
+   * Searches for a given value starting from a specified node in the B-tree.
+   * 
+   * This method recursively traverses down the B-tree starting from the node
+   * pointed by `pointer`, following the correct path based on the value comparisons,
+   * until it either finds the value or reaches a leaf node without finding it.
+   * 
+   * @param value The value to search for in the B-tree.
+   * @param pointer The index of the node from which the search starts.
+   * @param s A string representing the path taken during the search.
+   * @return True if the value is found, false otherwise.
    */
   private boolean nodeLookup(int value, int pointer, String s) {
     Node node = nodes[pointer];
@@ -155,56 +175,74 @@ final class Btree {
         return nodeLookup(value, node.children[i], s);
     }
   }
-    private void splitChild(int parent, int i, int fullChild) {
-        int newChild = initNode();
-        Node child = nodes[fullChild];
-        Node newNode = nodes[newChild];
 
-        // Determine indices based on NODESIZE being even or odd
-        int promoteIndex = (NODESIZE % 2 == 0) ? (NODESIZE / 2) - 1 : NODESIZE / 2;
-        int startIndexOfNewNode = promoteIndex + 1;
-
-        // For odd NODESIZE, the right half includes the middle element
-        int numOfValuesToNewNode = NODESIZE / 2 ;
-        newNode.size = numOfValuesToNewNode;
-
-        // Copy values to the new node, starting from startIndexOfNewNode
-        System.arraycopy(child.values, startIndexOfNewNode, newNode.values, 0, numOfValuesToNewNode);
-
-        if (!isLeaf(child)) {
-            // Calculate the number of children to move for both even and odd NODESIZE
-            int childrenToMove = NODESIZE + 1 - startIndexOfNewNode;
-            newNode.childrenSize = childrenToMove;
-
-            // Copy the children to the new node
-            System.arraycopy(child.children, startIndexOfNewNode, newNode.children, 0, childrenToMove);
-            Arrays.fill(child.children, startIndexOfNewNode, child.children.length, -1); // Clear moved children references
-        }
-
-        // Adjust the size of the original child node
-        child.size = promoteIndex;
-
-        // Make room and promote the value to the parent node
-        System.arraycopy(nodes[parent].children, i + 1, nodes[parent].children, i + 2, nodes[parent].size - i);
-        nodes[parent].children[i + 1] = newChild;
-        System.arraycopy(nodes[parent].values, i, nodes[parent].values, i + 1, nodes[parent].size - i);
-        nodes[parent].values[i] = child.values[promoteIndex];
-
-        // Clear the values that were moved to the new node
-        Arrays.fill(child.values, promoteIndex, NODESIZE, -1);
-
-        // Update the parent node's size
-        nodes[parent].size++;
-        nodes[parent].childrenSize++;
-    }
-
-
-    /**
-   * Splits the specified full child of a given parent node.
+  /**
+   * Splits a full child node of a given parent node into two nodes.
    * 
-   * @param parent   The pointer of the parent node in the nodes array.
-   * @param i        The index within the parent node's children array where the full child is located.
-   * @param fullChild The pointer of the full child node in the nodes array that needs to be split.
+   * When a child node has reached its maximum capacity (NODESIZE), this method
+   * is called to split it into two nodes. The median value (take the floor when NODESIZE is even)
+   * is promoted to the parent node, and the values greater than the median are moved
+   * to a new node. The parent node's children pointers are also updated accordingly.
+   * 
+   * @param parent The index of the parent node in the nodes array.
+   * @param i The position of the full child node in the parent's children array.
+   * @param fullChild The index of the full child node in the nodes array that needs to be split.
+   */
+  private void splitChild(int parent, int i, int fullChild) {
+      int newChild = initNode();
+      Node child = nodes[fullChild];
+      Node newNode = nodes[newChild];
+
+      // Determine indices based on NODESIZE being even or odd
+      int promoteIndex = (NODESIZE % 2 == 0) ? (NODESIZE / 2) - 1 : NODESIZE / 2;
+      int startIndexOfNewNode = promoteIndex + 1;
+
+      // For odd NODESIZE, the right half includes the middle element
+      int numOfValuesToNewNode = NODESIZE / 2 ;
+      newNode.size = numOfValuesToNewNode;
+
+      // Copy values to the new node, starting from startIndexOfNewNode
+      System.arraycopy(child.values, startIndexOfNewNode, newNode.values, 0, numOfValuesToNewNode);
+
+      if (!isLeaf(child)) {
+          // Calculate the number of children to move for both even and odd NODESIZE
+          int childrenToMove = NODESIZE + 1 - startIndexOfNewNode;
+          newNode.childrenSize = childrenToMove;
+
+          // Copy the children to the new node
+          System.arraycopy(child.children, startIndexOfNewNode, newNode.children, 0, childrenToMove);
+          Arrays.fill(child.children, startIndexOfNewNode, child.children.length, -1); // Clear moved children references
+      }
+
+      // Adjust the size of the original child node
+      child.size = promoteIndex;
+
+      // Make room and promote the value to the parent node
+      System.arraycopy(nodes[parent].children, i + 1, nodes[parent].children, i + 2, nodes[parent].size - i);
+      nodes[parent].children[i + 1] = newChild;
+      System.arraycopy(nodes[parent].values, i, nodes[parent].values, i + 1, nodes[parent].size - i);
+      nodes[parent].values[i] = child.values[promoteIndex];
+
+      // Clear the values that were moved to the new node
+      Arrays.fill(child.values, promoteIndex, NODESIZE, -1);
+
+      // Update the parent node's size
+      nodes[parent].size++;
+      nodes[parent].childrenSize++;
+  }
+
+
+  /**
+   * Inserts a value into a node that is not full.
+   * 
+   * This method first checks if the node is a leaf. If so, it inserts the value directly
+   * into the correct position. If the node is not a leaf, it finds the correct child node
+   * to descend into. If this child node is full, it is split first before the method recurses
+   * into it to insert the value.
+   * 
+   * @param nodeIndex The node pointer of the node in the nodes array where the value is to be inserted.
+   * @param value The value to be inserted.
+   * @return -2 if the value already exists, -1 if the insertion is successful.
    */
   private int insertNonFull(int nodeIndex, int value) {
     Node node = nodes[nodeIndex];
@@ -217,7 +255,6 @@ final class Btree {
       }
   }
 
-    // System.out.println("isLeaf?" + isLeaf(node));
     if (isLeaf(node)) { 
         // Insert the value into the correct position in a leaf node
         while (i >= 0 && value < node.values[i]) {
@@ -246,10 +283,18 @@ final class Btree {
     return insertNonFull(node.children[i], value);
   }
 
-  /*
-   * nodeInsert(int value, int pointer)
-   *    - -2 if the value already exists in the specified node
-   *    - -1 if the value is inserted into the node
+  /**
+   * Inserts a value starting from a specified node in the B-tree.
+   * 
+   * This method checks if the node pointed by `pointer` is full. If it is the root
+   * and it is full, a new root is created, and the old root is split. If it is not the root,
+   * it delegates the insertion to `insertNonFull`. This method ensures that the B-tree
+   * properties are maintained after the insertion.
+   * 
+   * @param value The value to be inserted into the B-tree.
+   * @param pointer The index of the node from which to start the insertion process.
+   * @return -2 if the value already exists in the tree, -1 if the insertion is successful, or
+   *         the index of the node if it needs to be split by the caller.
    */
   private int nodeInsert(int value, int pointer) {
     Node currNode = nodes[pointer];
@@ -276,8 +321,8 @@ final class Btree {
 
   /*
    * isLeaf(Node node)
-   *    - True if the specified node is a leaf node.
-   *         (Leaf node -> a missing children)
+   * @param node The node to check.
+   * @return True if the node is a leaf (has no children), false otherwise.
    */
   boolean isLeaf(Node node) {
     return node.childrenSize == 0;
@@ -285,8 +330,8 @@ final class Btree {
   
 
   /*
-   * initNode(): Create a new node and returns the pointer.
-   *    - return node pointer
+   * Initializes a new node and returns its index.
+   * @return The node pointer of the newly created node in the nodes array.
    */
   int initNode() {
     Node node = new Node();
@@ -302,21 +347,8 @@ final class Btree {
     return cntNodes++;
   }
 
-  // /*
-  //  * createLeaf(): Creates a new leaf node and returns the pointer.
-  //  *    - return node pointer
-  //  */
-  int createLeaf() {
-    Node node = new Node();
-    node.values = new int[NODESIZE];
-
-    checkSize();
-    nodes[cntNodes] = node;
-    return cntNodes++;
-  }
-
   /*
-   * checkSize(): Resizes the node array if necessary.
+   * Ensures there is enough space in the nodes array and resizes it if necessary.
    */
   private void checkSize() {
     // if node array is already full, temp will be cntNodes * 2
