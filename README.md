@@ -61,7 +61,8 @@ test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
    After the split, the middle key is promoted to the parent node, and the middle pointer is the new child node.
 - **Promotion:**
     - When a node is split, the middle value is promoted to the parent node. If the parent node is full, it is split recursively.
-
+    - after the promotion, the new key is inserted to the child node.
+- ![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/insert_2.png)
  **Summary of Insertion**
   - insertion algorithm is: check if node is full, splitting-promote-insert
   - Split the tree when needed: tree grows in height only when absolutely necessary
