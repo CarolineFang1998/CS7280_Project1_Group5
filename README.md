@@ -1,9 +1,13 @@
 
+
 # Indexing Structure for NoSQL database
 
 This Java project implements a B-tree data structure for NoSQL database, offering efficient algorithms for insertion, 
 lookup, and display operations. 
 
+## Contributors
+- Yuhan Fang   002194983
+- Luyan Deng     002665782
 ## How to Run the Code
 
 1. **Compilation:** Compile the Java files in your development environment or using a command line, e.g., `javac Btree.java BtreeTest.java`.
@@ -33,19 +37,24 @@ test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
 - Scalability: 
    B-tree is widely used in database and file systems. It is used to store large amount of data and is 
    scalable to store even more data.
+
+## Assumptions
+- **Unique Keys:** This implementation assumes that all keys are unique. Duplicate keys are not allowed.
+- **Integer Data Type:** This implementation is designed for integer values.
+- **NODESIZE Configuration:** `NODESIZE` is a fixed value determining the maximum number of values a node can hold.
+    the number of values a node can hold is >= 3 .Referencing from Introduction to Algorithms(P502), t is the minimum 
+      degree of the B-tree, and t>=2. Since each node can hold at most 2t-1 keys, NODESIZE >= 3 is required.
+- **Root Node:** The root node is the topmost node in the tree.
+- **Balanced Tree:** B-tree is self balanced
+
+   
 ## Functions:
   This project includes the following functions:
 
   - **Lookup (int keyValue)**: find the specified value. If the value exists, returning value is True.
   - **Insert (int keyValue)**: insert the specified value.
   - **Display (int node)**: print out the indexing tree structure under specified node.
-## B-tree Properties:
-  -**Data type**: int is used for key value.
 
-  -**NODESIZE**: The number of values a node can hold is >= 3 .Referencing from Introduction to Algorithms(P502)
-     t is the minimum degree of the B-tree, and t>=2. Since each node can hold at most 2t-1 keys, NODESIZE >= 3 is required.
-
-  -**Root**: The root node is the topmost node in the tree. 
 ## Algorithm Overview
 - **Lookup:**
     - Begins at the root and traverses down the tree comparing the target value with the values in each node until it finds the target or reaches a leaf node.
@@ -57,7 +66,7 @@ test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
     - If a node is full (node size equals to `NODESIZE` values), it is split into two nodes and promote the middle value. 
     - if the parent node is full, it is split recursively. To avoid going back the tree, we split every full node on the way
        down to the tree. When we need to split a node, the parent node is not full. Inserting a new key into the B-tree will be one way from the root to a leaf node
-- **Splitting:**
+- **Split:**
     - if a node is full, it is split into two nodes. and the middle value (or middle-left for even `NODESIZE`) is promoted to the parent node.
     - According to Introduction to Algorithms(P508), the split operation is as follows:
 ![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/Splitting.png)
@@ -75,10 +84,7 @@ test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
   - Handling duplicate keys: duplicate key values are not allowed in the B-tree.
   - Able to deal with both odd and even NODESIZE
   
-   
-
-
-
+    
 ## Limitations
 - **Data Type:** This implementation is designed for integer values. Modifying the data type requires changes to the `Btree` class.
 - **NODESIZE Configuration:** `NODESIZE` is a fixed value determining the maximum number of values a node can hold. This implementation may require manual adjustment of `NODESIZE` based on specific needs.
@@ -94,6 +100,4 @@ To customize `NODESIZE` or implement additional features, modify the `Btree` cla
 Introduction to Algorithms,4th Edition(Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein),MIT Press,2009
 https://dl.ebooksworld.ir/books/Introduction.to.Algorithms.4th.Leiserson.Stein.Rivest.Cormen.MIT.Press.9780262046305.EBooksWorld.ir.pdf
 ---
-## Contributors
-- Caroline Fang
-- Luyan Deng
+
