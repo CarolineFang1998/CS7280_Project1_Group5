@@ -47,7 +47,11 @@ test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
 
   -**Root**: The root node is the topmost node in the tree. 
 ## Algorithm Overview
-
+- **Lookup:**
+    - Begins at the root and traverses down the tree comparing the target value with the values in each node until it finds the target or reaches a leaf node.
+    - if not a leaf node, it will continue to search in the child node.
+- **Display:**
+    - Recursively prints the values of each node starting from the root, showing the structure of the tree.
 - **Insertion:**
     - Starts at the root and finds the correct position for the new value.
     - If a node is full (node size equals to `NODESIZE` values), it is split into two nodes and promote the middle value. 
@@ -63,18 +67,16 @@ test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
     - When a node is split, the middle value is promoted to the parent node. If the parent node is full, it is split recursively.
     - after the promotion, the new key is inserted to the child node.
 - ![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/insert_2.png)
- **Summary of Insertion**
-  - insertion algorithm is: check if node is full, splitting-promote-insert
+- **Summary**
+  - insertion order: check if node is full, splitting-promote-insert
   - Split the tree when needed: tree grows in height only when absolutely necessary
   - Efficient Handling of Full Nodes: This is because it avoids the need to backtrack and split the node after finding it's full
   - Minimum disk access: split from root to leaf once. only o(h)time disk accesses. h is the height of the tree.
+  - Handling duplicate keys: duplicate key values are not allowed in the B-tree.
+  - Able to deal with both odd and even NODESIZE
   
    
-- **Lookup:**
-    - Begins at the root and traverses down the tree comparing the target value with the values in each node until it finds the target or reaches a leaf node.
-    - if not a leaf node, it will continue to search in the child node.
-- **Display:**
-    - Recursively prints the values of each node starting from the root, showing the structure of the tree.
+
 
 
 ## Limitations
