@@ -4,6 +4,20 @@
 This Java project implements a B-tree data structure for NoSQL database, offering efficient algorithms for insertion, 
 lookup, and display operations. 
 
+## How to Run the Code
+
+1. **Compilation:** Compile the Java files in your development environment or using a command line, e.g., `javac Btree.java BtreeTest.java`.
+2. **Execution:** Run the compiled `BtreeTest` class to execute predefined tests, e.g., `java BtreeTest`.
+
+## Running Tests
+
+The `BtreeTest` class includes a `main` method that executes multiple predefined test cases. Uncomment any test case in the `main` method to run it:
+
+```java
+// Example test case
+test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
+```
+
 ## Reason to choose B-tree 
 
 - High Fanout and Efficient Disk Access: 
@@ -42,27 +56,17 @@ lookup, and display operations.
        the parent node is not full. Inserting a new key into the B-tree will be one way from the root to a leaf node
 - **Splitting:**
     - to split a full root node, we first create a new child node
-  
+    - According to Introduction to Algorithms(P508), the split operation is as follows:
 - ![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/Splitting.png)
+   Nodesize is 7, there are 8 pointers and 7 keys. The middle key is 4, and the middle pointer is 5.
+   After the split, the middle key is promoted to the parent node, and the middle pointer is the new child node.
+
 - **Lookup:**
     - Begins at the root and traverses down the tree comparing the target value with the values in each node until it finds the target or reaches a leaf node.
     - if not a leaf node, it will continue to search in the child node.
 - **Display:**
     - Recursively prints the values of each node starting from the root, showing the structure of the tree.
 
-## How to Run the Code
-
-1. **Compilation:** Compile the Java files in your development environment or using a command line, e.g., `javac Btree.java BtreeTest.java`.
-2. **Execution:** Run the compiled `BtreeTest` class to execute predefined tests, e.g., `java BtreeTest`.
-
-## Running Tests
-
-The `BtreeTest` class includes a `main` method that executes multiple predefined test cases. Uncomment any test case in the `main` method to run it:
-
-```java
-// Example test case
-test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
-```
 
 ## Limitations
 - **Data Type:** This implementation is designed for integer values. Modifying the data type requires changes to the `Btree` class.
@@ -75,8 +79,10 @@ test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
 To customize `NODESIZE` or implement additional features, modify the `Btree` class accordingly. Ensure any changes maintain the B-tree properties to ensure performance and correctness.
 
 ## References
+
 Introduction to Algorithms,4th Edition(Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein),MIT Press,2009
 https://dl.ebooksworld.ir/books/Introduction.to.Algorithms.4th.Leiserson.Stein.Rivest.Cormen.MIT.Press.9780262046305.EBooksWorld.ir.pdf
 ---
-
-This README provides a basic template. Adjust the content to reflect the specifics of your B-tree implementation, such as any unique features, configurations, or additional methods you have included.
+## Contributors
+- Caroline Fang
+- Luyan Deng
