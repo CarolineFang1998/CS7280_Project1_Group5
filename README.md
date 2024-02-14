@@ -57,10 +57,15 @@ test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
 - **Splitting:**
     - to split a full root node, we first create a new child node
     - According to Introduction to Algorithms(P508), the split operation is as follows:
-- ![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/Splitting.png)
+![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/Splitting.png)
    Nodesize is 7, there are 8 pointers and 7 keys. The middle key is 4, and the middle pointer is 5.
    After the split, the middle key is promoted to the parent node, and the middle pointer is the new child node.
-
+- Benefit of splitting-promote-insert
+  - Split the tree when needed: tree grows in height only when absolutely necessary
+  - Efficient Handling of Full Nodes: This is because it avoids the need to backtrack and split the node after finding it's full
+  - Minimum disk access: split from root to leaf once. only o(h)time disk accesses. h is the height of the tree.
+  
+   
 - **Lookup:**
     - Begins at the root and traverses down the tree comparing the target value with the values in each node until it finds the target or reaches a leaf node.
     - if not a leaf node, it will continue to search in the child node.
