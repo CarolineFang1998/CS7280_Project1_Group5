@@ -27,8 +27,10 @@ lookup, and display operations.
   - **Display (int node)**: print out the indexing tree structure under specified node.
 ## B-tree Properties:
   -**Data type**: int is used for key value.
+
   -**NODESIZE**: The number of values a node can hold is >= 3 .Referencing from Introduction to Algorithms(P502)
      t is the minimum degree of the B-tree, and t>=2. Since each node can hold at most 2t-1 keys, NODESIZE >= 3 is required.
+
   -**Root**: The root node is the topmost node in the tree. 
 ## Algorithm Overview
 
@@ -41,7 +43,7 @@ lookup, and display operations.
 - **Splitting:**
     - to split a full root node, we first create a new child node
   
-- 
+- ![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/Splitting.png)
 - **Lookup:**
     - Begins at the root and traverses down the tree comparing the target value with the values in each node until it finds the target or reaches a leaf node.
     - if not a leaf node, it will continue to search in the child node.
