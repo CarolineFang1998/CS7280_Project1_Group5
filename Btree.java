@@ -15,7 +15,7 @@ import java.util.Queue;
 
 final class Btree {
 
-  /* Size of Node. Mininum is 2. */
+  /* Size of Node. Mininum is 3. */
 
   private static final int NODESIZE = 5;
 
