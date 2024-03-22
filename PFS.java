@@ -9,13 +9,13 @@ public class PFS {
   private int blockLeft;
 
   public PFS(DB db, int PFSNumber) {
-    System.out.println("creating PFS");
+    System.out.println("creating PFS" + PFSNumber);
     this.db = db;
     this.sequenceNumber = PFSNumber; // if .db0, sequenceNumber = 0
     this.content = new char[4000][db.getBlockSize()]; // first block is always bitmap
     this.blockLeft = 4000;
     // check if this file is already exist
-    if(db.getNumOfPFSFiles() <=  sequenceNumber + 1) {
+    if(db.getNumOfPFSFiles() >=  sequenceNumber + 1) {
       // this.content = loadExistingPFS()
     } else {
       if(PFSNumber == 0) {
@@ -45,7 +45,16 @@ public class PFS {
       this.content[0][i] = '0';
     }
 
+    updateBitMap(0, true);
+    updateBitMap(1, true);
+    updateBitMap(2, true);
+    System.out.println("blockleft expect3997 " + this.blockLeft);
     updateBitMap(0, false);
+    System.out.println("blockleft expect3998 " + this.blockLeft);
+
+    updateBitMap(5, true);
+
+
 
     // fill the fifth line with superblock info, update the block 0 tobe full
     // db name(first 30 , offset 0~29), db numOfFCBFiles, db numOfPFSFiles, db blocksize(), .
@@ -58,9 +67,10 @@ public class PFS {
 
   // TODO: write a function which accept the position in int, and mark the bitMap empty, and update the block size
   // blockNum is from 0 to 3999, isBlockEmpty true means set the block to empty
-  public void updateBitMap(int blockNum, boolean isBlockEmpty) {
+  public void updateBitMap(int blockNum, boolean isBecomeFull) {
     int hexIndex = blockNum / 4; // Determine the hex character's index in the bitmap
     int bitPosition = blockNum % 4; // Determine the bit's position within the hex character
+    System.out.println("hexIndex"+hexIndex+" bitPosition " + bitPosition);
 
     // Convert the hex character to binary
     char hexChar = this.content[0][hexIndex];
@@ -74,20 +84,21 @@ public class PFS {
     // Check the current status before changing it
     boolean isCurrentlyEmpty = binary[bitPosition] == 0;
 
-    // Update the binary value based on isBlockEmpty
-    binary[bitPosition] = isBlockEmpty ? 0 : 1;
-
     // Adjust blockSize based on the change
-    if (isCurrentlyEmpty && !isBlockEmpty) {
-      // If the block was empty (0) and is now used (1), decrease blockSize
-      this.db.setBlockSize(this.blockLeft - 1);
-    } else if (!isCurrentlyEmpty && isBlockEmpty) {
-      // If the block was used (1) and is now empty (0), increase blockSize
-      this.db.setBlockSize(this.blockLeft + 1);
+    if (isCurrentlyEmpty && isBecomeFull) {
+      // If the block was empty (0) and is now used (1), dec blockLeft
+      this.blockLeft -=  1;
+    } else if (!isCurrentlyEmpty && !isBecomeFull) {
+      // If the block was used (1) and is now empty (0), inc blockLeft
+      this.blockLeft += 1;
     }
     // Note: If the status does not change, do not adjust blockSize
 
+    // Update the binary value based on isBlockEmpty
+    binary[bitPosition] = isBecomeFull ? 1 : 0;
+
     // Convert the binary back to a single hexadecimal character
+    // 1000 (8) is for 1st block full, 0100 (4) is for 2nd block full
     int newValue = binary[0] * 8 + binary[1] * 4 + binary[2] * 2 + binary[3];
     this.content[0][hexIndex] = Integer.toHexString(newValue).toUpperCase().charAt(0);
   }
