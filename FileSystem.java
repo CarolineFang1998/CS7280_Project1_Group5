@@ -71,29 +71,57 @@ public class FileSystem {
           if (uniqueDb0Files.size()==0 || !uniqueDb0Files.contains(databaseName)) {
             System.out.println("if the database does not exist: create a new database");
             // create a new database.db0-> input (string name, block size)
-            DB myDatabase = new DB(databaseName, BLOCK_SIZE);
+            currentDatabase = new DB(databaseName, BLOCK_SIZE, false);
             uniqueDb0Files.add(databaseName);
 
           } else {
             // if the database exists: load the old database
+            currentDatabase = new DB(databaseName, BLOCK_SIZE, true);
 
           }
         } else {
           System.out.println("Missing database name for 'open' command.");
         }
+
       } else if (currentDatabase != null) {
         if ("put".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
-            // todo: implement put
+            // check if the file is exist in the current /csv dir, if not print "incorrect file name"
+            // if the file name is correct
+            // Define the directory where you expect the CSV files to be
+            String directoryPath = "./csvs";
+            File directory = new File(directoryPath);
+
+            // Ensure the directory exists
+            if (!directory.exists() || !directory.isDirectory()) {
+              System.out.println("The CSV directory does not exist.");
+              // Optionally, you can create the directory here if you want
+              // directory.mkdirs();
+            } else {
+              // Construct the path to the expected file within the ./csv directory
+              String filePath = directoryPath + "/" + commandParts[1];
+              File file = new File(filePath);
+
+              // Check if the file exists and is not a directory
+              if (file.exists() && !file.isDirectory()) {
+                // If the file exists, proceed with uploading the file to the database
+                currentDatabase.uploadFCBFile(commandParts[1]);
+              } else {
+                // If the file does not exist, print an error message
+                System.out.println("Incorrect file name or the file does not exist in the ./csv directory.");
+              }
+            }
           } else {
             System.out.println("Missing filename for 'put' command.");
           }
+
         } else if ("get".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
               // todo: implement get
           } else {
             System.out.println("Missing filename for 'get' command.");
           }
+
         } else if ("dir".equalsIgnoreCase(command)) {
 //          // todo: implement list all the file
         } else if ("find".equalsIgnoreCase(command)) {
@@ -102,18 +130,22 @@ public class FileSystem {
           } else {
             System.out.println("Missing key for 'find' command.");
           }
+
         } else if ("kill".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
             // todo: implement kill
             if (commandParts[1].equals(currentDatabase)) {
               currentDatabase = null; // Reset current database if it's killed
             }
+
           } else {
             System.out.println("Missing database name for 'kill' command.");
           }
+
         } else {
           System.out.println("Unknown command or command not available outside a database context.");
         }
+
       } else {
         System.out.println("No database open. Use 'open <dbname>' to open a database.");
       }
