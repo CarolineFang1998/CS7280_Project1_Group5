@@ -1,6 +1,8 @@
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class PFS {
@@ -53,7 +55,8 @@ public class PFS {
   // blocks is the already produced blocks,
   // continuePFSNum means the end block will be in the next PFS file, -1 is this is the only
   // datablock(no space): dblock0 dblock1 dblock2 dblock3 dblock4 dblock5 ->
-  public void addData(List<char[]> blocks, int continuePFSNum) {
+  public String addData(List<char[]> blocks, int continuePFSNum) {
+    BlockPointer startBp = new BlockPointer(this.sequenceNumber, this.emptyBlock);
     int counter = 0;
     for (char[] block : blocks) {
       counter ++;
@@ -76,27 +79,29 @@ public class PFS {
 
       updateBitMap(this.emptyBlock, true);
       int nextEmptyBlock = findNextFreeBlock();
-//
-//      if (counter < blocks.size()) {
-//        // Generate the 7-digit pointer as a char array
-//        String pointerString = String.format("%03d%04d", sequenceNumber, nextEmptyBlock);
-//        pointerCharArray = pointerString.toCharArray();
-//      } else {
-//        if(continuePFSNum == -1) {
-//          // the end data block
-//          String pointerString = "9999999";
-//          pointerCharArray = pointerString.toCharArray();
-//        } else {
-//          // TODO: this might be continue in next PFS file
-//        }
-//      }
-//
-//      // Insert the 7-digit pointer into the last 7 characters of the block in content
-//      int pointerStartIndex = db.getBlockSize() - 1 - 7; // Start index for the 7-digit pointer
-//      for (int i = 0; i < pointerCharArray.length; i++) {
-//        content[this.emptyBlock][pointerStartIndex + i] = pointerCharArray[i];
-//      }
-//
+
+      if (counter < blocks.size()) {
+        // Generate the 7-digit pointer as a char array
+        BlockPointer bp = new BlockPointer(sequenceNumber, nextEmptyBlock);
+        String pointerString = bp.getPtrString();
+        pointerCharArray = pointerString.toCharArray();
+      } else {
+        if(continuePFSNum == -1) {
+          // the end data block
+          String pointerString = "9999999";
+          pointerCharArray = pointerString.toCharArray();
+        } else {
+          // TODO: this might be continue in next PFS file
+        }
+
+
+      }
+
+      // Insert the 7-digit pointer into the last 7 characters of the block in content
+      int pointerStartIndex = db.getBlockSize() - 7; // Start index for the 7-digit pointer
+      for (int i = 0; i < pointerCharArray.length; i++) {
+        content[this.emptyBlock][pointerStartIndex + i] = pointerCharArray[i];
+      }
 
       this.emptyBlock = nextEmptyBlock;
     }
@@ -108,6 +113,8 @@ public class PFS {
       System.err.println("An error occurred while writing the file: " + e.getMessage());
     }
     updateSuperBlock();
+
+    return startBp.getPtrString();
   }
 
   public void initFirstPFS(){
@@ -176,8 +183,55 @@ public class PFS {
     return -1;
   }
 
+  // put fcb metadata into content
+  public void updateFCBMetadeta(String FCBName, LocalDateTime time, int size,
+                                  String dataBlockStart, String indexStartPointer) {
+    char[] metadeta = generateFCBMetadata(FCBName, time, size, dataBlockStart, indexStartPointer);
+//    this.content[4] = metadeta;
+    System.arraycopy(metadeta, 0, this.content[4], 0, metadeta.length);
 
+    // update super block
+    db.setNumOfFCBFiles(db.getNumOfFCBFiles()+1);
+    updateSuperBlock();
 
+    // write the current char array to .dbfile
+    try {
+      writeCharArrayToFile();
+      System.out.println("File written successfully.");
+    } catch (IOException e) {
+      System.err.println("An error occurred while writing the file: " + e.getMessage());
+    }
+  }
+
+  public char[] generateFCBMetadata(String FCBName, LocalDateTime time, int size,
+                             String dataBlockStart, String indexStartPointer) {
+
+    // Ensure the FCBName fits into 20 bytes, truncating if necessary
+    if (FCBName.length() > 20) {
+      FCBName = FCBName.substring(0, 20);
+    } else {
+      // Pad the FCBName to ensure it is exactly 20 characters long
+      while (FCBName.length() < 20) {
+        FCBName += " ";
+      }
+    }
+
+    // Format the time into a 14-byte string
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MMM/yy:HHa");
+    String formattedTime = time.format(formatter);
+
+    // Convert the size to a String and ensure it is exactly 10 bytes
+    String sizeStr = String.valueOf(size);
+    while (sizeStr.length() < 10) {
+      sizeStr = "0" + sizeStr; // Pad with spaces to align to the right
+    }
+    System.out.println("sizeStr " + sizeStr);
+
+    // Prepare the final metadata string
+    String metadataStr = FCBName + formattedTime + sizeStr + dataBlockStart + indexStartPointer;
+    // Convert the metadata string to a char array and return
+    return metadataStr.toCharArray();
+  }
 
   public void updateSuperBlock() {
     // Update SuperBlock will be in the block 3

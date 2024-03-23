@@ -1,6 +1,8 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -139,10 +141,19 @@ public class DB {
     // if there is space left in the pfs
     if (pfsList.get(0).getBlockLeft() > 0) {
         // todo: implement the fcb metadata
-      // FCB name:
-      //      pfsList.get(0).updateFCBMetadeta(String FCBName, String time, int Size,String dataBlockStart , String indexStartPointer);
+      // FCB name: 20 char, time: 14 char (sample:  "15/SEP/23:25PM")
+      // number of blocks 10 int.  data start block(7 char): default: 9999999,
+      // index start block(7 char): default: 9999999,
+      String dataBlockPointer = pfsList.get(0).addData(blocks, -1);
+      // add index block
 
-      pfsList.get(0).addData(blocks, -1);
+      pfsList.get(0).updateFCBMetadeta(fileName, LocalDateTime.now(), blocksSize, dataBlockPointer,
+              "9999999");
+
+
+
+
+
       // TODO: add index block as well
       // TODO: the end pointer could be in the next pfs file
     }
