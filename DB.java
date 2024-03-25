@@ -153,8 +153,11 @@ public class DB {
 
       dataStartNEndPtrs.add(pfsList.get(0).addData(blocks, keyPointerList, -1));
       // add index block
+      // TODO: function1: generate a index list char[]
+      // TODO: function2: see how many space we need and generate a List<Empty Block Lists String> and
+      //  replace all the pointer to corresponding String
 
-      // tofo: hard coded
+      // todo: hard coded, change it
       pfsList.get(0).updateFCBMetadeta(fileName, LocalDateTime.now(), blocksSize,
               dataStartNEndPtrs.get(0).get(0), "9999999");
 
