@@ -3,6 +3,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 public class PFS {
@@ -41,7 +42,7 @@ public class PFS {
     }
 
     this.emptyBlock = findNextFreeBlock();
-    System.out.println("this.emptyBlock " + this.emptyBlock);
+//    System.out.println("this.emptyBlock " + this.emptyBlock);
 
     // write the current char array to .dbfile
     try {
@@ -55,54 +56,56 @@ public class PFS {
   // blocks is the already produced blocks,
   // continuePFSNum means the end block will be in the next PFS file, -1 is this is the only
   // datablock(no space): dblock0 dblock1 dblock2 dblock3 dblock4 dblock5 ->
-  public String addData(List<char[]> blocks, int continuePFSNum) {
+  public List<String> addData(List<char[]> blocks, List<List<String>> keyPointerList, int continuePFSNum) {
     BlockPointer startBp = new BlockPointer(this.sequenceNumber, this.emptyBlock);
+
+    List<String> startNEndPtrs = new ArrayList<>();
+    startNEndPtrs.add(startBp.getPtrString());
+
     int counter = 0;
     for (char[] block : blocks) {
       counter ++;
+      int currBlock = this.emptyBlock;
 
-      if (this.emptyBlock >= content.length) {
+      if (currBlock >= content.length) {
         System.out.println("No more empty blocks available.");
         break; // Exit if there are no more empty blocks
       }
 
-      System.out.println("Empty Block " + emptyBlock + ":");
-      System.out.println(new String(block));
+//      System.out.println("Empty Block " + currBlock + ":");
+//      System.out.println(new String(block));
 
-      System.arraycopy(block, 0, this.content[this.emptyBlock], 0, block.length);
+
+      System.arraycopy(block, 0, this.content[currBlock], 0, block.length);
 //      this.content[this.emptyBlock] = block;
 //      for (int i = 0; i < block.length; i++) {
 //        this.content[this.emptyBlock][i] = block[i];
 //      }
-
-      char[] pointerCharArray = null;
-
-      updateBitMap(this.emptyBlock, true);
+      String pointerString = null;
+      updateBitMap(currBlock, true);
       int nextEmptyBlock = findNextFreeBlock();
 
       if (counter < blocks.size()) {
-        // Generate the 7-digit pointer as a char array
+        // if this is not the last block
         BlockPointer bp = new BlockPointer(sequenceNumber, nextEmptyBlock);
-        String pointerString = bp.getPtrString();
-        pointerCharArray = pointerString.toCharArray();
+        pointerString = bp.getPtrString();
       } else {
+        // if this is the last block
         if(continuePFSNum == -1) {
           // the end data block
-          String pointerString = "9999999";
-          pointerCharArray = pointerString.toCharArray();
+          pointerString = "9999999";
         } else {
+          BlockPointer curDP = new BlockPointer(sequenceNumber, currBlock);
+          pointerString =  curDP.getPtrString();
           // TODO: this might be continue in next PFS file
         }
-
-
+        startNEndPtrs.add(pointerString);
       }
 
-      // Insert the 7-digit pointer into the last 7 characters of the block in content
-      int pointerStartIndex = db.getBlockSize() - 7; // Start index for the 7-digit pointer
-      for (int i = 0; i < pointerCharArray.length; i++) {
-        content[this.emptyBlock][pointerStartIndex + i] = pointerCharArray[i];
-      }
+      updateBlockPointer(currBlock, pointerString);
 
+      // insert value into keyPointerList
+      updateKeyPointerList(block, keyPointerList, currBlock);
       this.emptyBlock = nextEmptyBlock;
     }
 
@@ -114,8 +117,71 @@ public class PFS {
     }
     updateSuperBlock();
 
-    return startBp.getPtrString();
+//    System.out.println("keyPointerList.size() " + keyPointerList.size());
+    return startNEndPtrs;
   }
+
+  // function which input block content to List<{key:dataBlockPointer}>
+  void updateKeyPointerList(char[] block, List<List<String>> keyPointerList, int blockNum) {
+    // 6 records in one data block, each 40 characters long
+    int recordLength = 40;
+    for (int i = 0; i < 6; i++) {
+      // Calculate the start and end indices for the current record
+      int start = i * recordLength;
+      int end = start + recordLength;
+
+      // Extract the current record from the block
+      String record = new String(block, start, Math.min(recordLength, block.length - start));
+
+      // Find the index of the first comma to separate the key from the rest of the record
+      int commaIndex = record.indexOf(',');
+      if (commaIndex == -1) {
+        // Handle the case where the comma is missing or this is an empty record
+        continue;
+      }
+
+      // Extract the key (everything before the comma)
+      String key = record.substring(0, commaIndex);
+
+      // Generate the DataBlockPointer for this record
+      DataBlockPointer dbPointer = new DataBlockPointer(this.sequenceNumber, blockNum, i);
+
+      // Create the current record list containing the key and DataBlockPointer string
+      List<String> currRecord = new ArrayList<>();
+      currRecord.add(key);
+      currRecord.add(dbPointer.getPtrString());
+      System.out.println(key + " " + dbPointer.getPtrString());
+
+      // Add the current record to the keyPointerList
+      keyPointerList.add(currRecord);
+    }
+  }
+
+
+
+  void updateBlockPointer(int blockNum, String pointer) {
+    // Validate the pointer length
+    if (pointer == null || pointer.length() != 7) {
+      throw new IllegalArgumentException("Pointer must be exactly 7 characters long.");
+    }
+
+    // Calculate the start index for the 7-character pointer within the block
+    int pointerStartIndex = this.db.getBlockSize() - 7;
+
+    // Convert the pointer string to a char array
+    char[] pointerChars = pointer.toCharArray();
+
+    // Update the last 7 characters of the specified block
+    for (int i = 0; i < pointerChars.length; i++) {
+      this.content[blockNum][pointerStartIndex + i] = pointerChars[i];
+    }
+  }
+
+  // todo: updateDataBlockPointer
+//  int void updateDataBlockPointer(int blockNum, int recordNum, String Pointer) {
+//
+//  }
+
 
   public void initFirstPFS(){
     db.setNumOfPFSFiles(db.getNumOfPFSFiles()+1);
@@ -225,7 +291,7 @@ public class PFS {
     while (sizeStr.length() < 10) {
       sizeStr = "0" + sizeStr; // Pad with spaces to align to the right
     }
-    System.out.println("sizeStr " + sizeStr);
+//    System.out.println("sizeStr " + sizeStr);
 
     // Prepare the final metadata string
     String metadataStr = FCBName + formattedTime + sizeStr + dataBlockStart + indexStartPointer;
@@ -304,7 +370,7 @@ public class PFS {
   public void updateBitMap(int blockNum, boolean isBecomeFull) {
     int hexIndex = blockNum / 4; // Determine the hex character's index in the bitmap
     int bitPosition = blockNum % 4; // Determine the bit's position within the hex character
-    System.out.println("hexIndex"+hexIndex+" bitPosition " + bitPosition);
+//    System.out.println("hexIndex"+hexIndex+" bitPosition " + bitPosition);
 
     // Convert the hex character to binary
     char hexChar = this.content[0][hexIndex];
@@ -348,6 +414,7 @@ public class PFS {
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
       for (char[] row : this.content) {
         writer.write(row);
+        // Todo: remove this when demo.
         writer.newLine(); // Use this if you want each row in a new line, remove if not needed
       }
     }

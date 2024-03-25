@@ -136,19 +136,30 @@ public class DB {
 
   }
   public void storeDataInPFS(List<char[]> blocks, String fileName, int blocksSize) {
-    // update
+    // start and end pointers
+    // List<{startPointerString, endPointerString}>
+    List<List<String>> dataStartNEndPtrs = new ArrayList<>();
+
+    // List of keyValues
+    // List<{key:dataBlockPointer}>
+    List<List<String>> keyPointerList = new ArrayList<>();
 
     // if there is space left in the pfs
     if (pfsList.get(0).getBlockLeft() > 0) {
-        // todo: implement the fcb metadata
+        // todo: implement the fcb metadata class
       // FCB name: 20 char, time: 14 char (sample:  "15/SEP/23:25PM")
       // number of blocks 10 int.  data start block(7 char): default: 9999999,
       // index start block(7 char): default: 9999999,
-      String dataBlockPointer = pfsList.get(0).addData(blocks, -1);
+
+      dataStartNEndPtrs.add(pfsList.get(0).addData(blocks, keyPointerList, -1));
       // add index block
 
-      pfsList.get(0).updateFCBMetadeta(fileName, LocalDateTime.now(), blocksSize, dataBlockPointer,
-              "9999999");
+      // tofo: hard coded
+      pfsList.get(0).updateFCBMetadeta(fileName, LocalDateTime.now(), blocksSize,
+              dataStartNEndPtrs.get(0).get(0), "9999999");
+
+      // data to key:value pair
+
 
 
 
@@ -159,6 +170,8 @@ public class DB {
     }
     // TODO: check other block could store
   }
+
+  // todo: updateDataBlockPointer
 
 
 
