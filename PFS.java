@@ -71,15 +71,29 @@ public class PFS {
   // keyPointerList is the start and end pointer in string
   // datablock(no space): dblock0 dblock1 dblock2 dblock3 dblock4 dblock5 -> block pointer
   // returns the start pointer and end pointer in string
+  /**
+   * Adds data blocks to the PFS file and returns pointers to the start and end of the written blocks.
+   * Updates the bitmap and block pointers accordingly.
+   *
+   * @param blocks The list of data blocks. 6 records
+   *               sample blocks(no space in block):
+   *               List<{dblock0 dblock1 dblock2 dblock3 dblock4 dblock5 ->block pointer}>
+   * @param keyPointerList A list of Strings within the data blocks.
+   *                       sample:        List<{String key, String value}>
+   *                       {"1", "1,Toy Story (1995),Adventure|Animation|C"}
+   * @return A list containing the start and end pointers to the added data blocks.
+   * {start pointer,end pointer}  pointer is a block pointer with 7 char.
+   *
+   */
   public List<String> addData(List<char[]> blocks, List<List<String>> keyPointerList) {
     this.emptyBlock = findNextFreeBlock();
 
-    System.out.println("addData blocks.size() " + blocks.size());
     BlockPointer startBp = new BlockPointer(this.sequenceNumber, this.emptyBlock);
 
     List<String> startNEndPtrs = new ArrayList<>();
-    startNEndPtrs.add(startBp.getPtrString());
+    startNEndPtrs.add(startBp.getPtrString()); // add the start pointer into startNEndPtrs
 
+    // Inserting blocks to data block
     int counter = 0;
     for (char[] block : blocks) {
       counter ++;
@@ -90,30 +104,28 @@ public class PFS {
         break; // Exit if there are no more empty blocks
       }
 
-//      System.out.println("Empty Block " + currBlock + ":");
-//      System.out.println(new String(block));
-//      System.out.println("currBlock" + currBlock);
+      // Put one block in corresponding this.content
       System.arraycopy(block, 0, this.content[currBlock], 0, block.length);
 
-      String pointerString;
       updateBitMap(currBlock, true); // mark this block full and update blockLeft
-      int nextEmptyBlock = findNextFreeBlock();
 
+      // Update block pointer
+      int nextEmptyBlock = findNextFreeBlock();
+      String pointerString;
       if (counter < blocks.size()) {
-        // if this is not the last block
+        // if this is not the end block, point to the next empty block
         BlockPointer bp = new BlockPointer(sequenceNumber, nextEmptyBlock);
         pointerString = bp.getPtrString();
       } else {
         // if this is the end block
         pointerString = "9999999";
         BlockPointer curDP = new BlockPointer(sequenceNumber, currBlock);
-        startNEndPtrs.add(curDP.getPtrString());
+        startNEndPtrs.add(curDP.getPtrString()); // add the end pointer into startNEndPtrs
       }
-
       updateBlockPointer(currBlock, pointerString);
 
       // insert value into keyPointerList
-//      updateKeyPointerList(block, keyPointerList, currBlock);
+      updateKeyPointerList(block, keyPointerList, currBlock);
       this.emptyBlock = nextEmptyBlock;
     }
 
@@ -128,7 +140,18 @@ public class PFS {
     return startNEndPtrs;
   }
 
-  // function which input block content to List<{key:dataBlockPointer}>
+  /**
+   * Updates the keyPointerList so it could help us to identify where the data stores.
+   * List<{key:dataBlockPointer}>
+   *
+   * @param block The list of data blocks. 6 records
+   *               sample blocks(no space in block):
+   *               List<{dblock0 dblock1 dblock2 dblock3 dblock4 dblock5 ->block pointer}>
+   * @param keyPointerList  A list of pointers to keys within the data blocks.
+   *                       sample:        List<{String key, String value}>
+   *                       {"1", "1,Toy Story (1995),Adventure|Animation|C"}
+   * @param blockNum The block number where the data is stored. From 0 to 3999
+   */
   void updateKeyPointerList(char[] block, List<List<String>> keyPointerList, int blockNum) {
     // 6 records in one data block, each 40 characters long
     int recordLength = 40;
@@ -157,7 +180,7 @@ public class PFS {
       List<String> currRecord = new ArrayList<>();
       currRecord.add(key);
       currRecord.add(dbPointer.getPtrString());
-      System.out.println(key + " " + dbPointer.getPtrString());
+//      System.out.println(key + " " + dbPointer.getPtrString());
 
       // Add the current record to the keyPointerList
       keyPointerList.add(currRecord);
@@ -165,7 +188,14 @@ public class PFS {
   }
 
 
-  // update certain block pointer in the end of the data block
+  /**
+   * Updates the pointer at the end of a specified block with a new value.
+   *
+   * @param blockNum The block number to update the pointer for.
+   * @param pointer The new pointer value to write at the end of the block. String size will be 7.
+   *                example:
+   *                0010005 means 001 is store in .db1, 0005 block# 5
+   */
   void updateBlockPointer(int blockNum, String pointer) {
     // Validate the pointer length
     if (pointer == null || pointer.length() != 7) {
@@ -189,6 +219,10 @@ public class PFS {
 //  int void updateDataBlockPointer(int blockNum, int recordNum, String Pointer) {
 //
 //  }
+
+  /**
+   * Initializes the bitmap for the PFS file, setting up the initial state of the blocks.
+   */
   public void initBitMap() {
     // fill the four line with Hexadecimal bit map 0-F, first 3 blocks char
     for (int i = 0; i < 256; i++) {
@@ -204,7 +238,9 @@ public class PFS {
     updateBitMap(3, true);
   }
 
- // init .db0 file
+  /**
+   * Initializes the first PFS file (.db0), setting up the superblock and bitmap.
+   */
   public void initFirstPFS(){
     db.setNumOfPFSFiles(db.getNumOfPFSFiles()+1);
 
@@ -220,14 +256,20 @@ public class PFS {
 
   }
 
-  // init .db1 & 1+ file, only initBitMap
+  /**
+   * Initializes additional PFS files (.db1, .db2, etc.), setting up only the bitmap.
+   */
   public void initMorePFS(){
     db.setNumOfPFSFiles(db.getNumOfPFSFiles()+1);
 
     initBitMap();
   }
 
-  // only update SuperBlock info in .db0
+  /**
+   * Updates the number of PFS files stored in the superblock of the .db0 file.
+   *
+   * @param numOfPFSFiles The new number of PFS files to record.
+   */
   public void updateSuperBlockNumOfPFSFiles(int numOfPFSFiles) {
     if (this.sequenceNumber == 0) {
       int superBlockNum = 4; // super block is in 5th block
@@ -258,7 +300,11 @@ public class PFS {
     }
   }
 
-  // only update SuperBlock info in .db0
+  /**
+   * Updates the number of FCB files stored in the superblock of the .db0 file.
+   *
+   * @param numOfFCBFiles The new number of FCB files to record.
+   */
   public void updateSuperBlockNumOfFCBFiles(int numOfFCBFiles) {
     if (this.sequenceNumber == 0) {
       int superBlockNum = 4; // super block is in 5th block
@@ -277,6 +323,11 @@ public class PFS {
     }
   }
 
+  /**
+   * Calculates and returns the number of free blocks left in the PFS file.
+   *
+   * @return The number of free blocks left.
+   */
   // TODO: check if this is correct
   public int calculateBlocksLeft() {
     int blocksLeft = 0;
@@ -298,6 +349,11 @@ public class PFS {
     return blocksLeft;
   }
 
+  /**
+   * Finds the next free block in the PFS file by examining the bitmap.
+   *
+   * @return The block number of the next free block.
+   */
   public int findNextFreeBlock() {
     // Loop through each row and column of the content array
     for (int row = 0; row < 4; row++) {
@@ -326,7 +382,16 @@ public class PFS {
     return -1;
   }
 
-  // put fcb metadata into content
+  /**
+   * Updates the FCB (File Control Block) metadata with provided details and stores it in the PFS.
+   * This includes the FCB name, creation or modification time, size, and pointers to data and index blocks.
+   *
+   * @param FCBName Name of the FCB.
+   * @param time Timestamp for the FCB, typically creation or modification time.
+   * @param size Size of the FCB, often reflecting the size of the data it controls.
+   * @param dataBlockStart Pointer to the start of the data block for this FCB.
+   * @param indexStartPointer Pointer to the start of the index block for this FCB.
+   */
   public void updateFCBMetadeta(String FCBName, LocalDateTime time, int size,
                                   String dataBlockStart, String indexStartPointer) {
     char[] metadeta = generateFCBMetadata(FCBName, time, size, dataBlockStart, indexStartPointer);
@@ -344,6 +409,17 @@ public class PFS {
     }
   }
 
+  /**
+   * Generates and returns the metadata for an FCB as a char array. This metadata includes the FCB's name,
+   * timestamp, size, and pointers to its data and index blocks.
+   *
+   * @param FCBName Name of the FCB.
+   * @param time Timestamp for the FCB, typically creation or modification time.
+   * @param size Size of the FCB, often reflecting the size of the data it controls.
+   * @param dataBlockStart Pointer to the start of the data block for this FCB.
+   * @param indexStartPointer Pointer to the start of the index block for this FCB.
+   * @return A char array containing the formatted FCB metadata.
+   */
   public char[] generateFCBMetadata(String FCBName, LocalDateTime time, int size,
                              String dataBlockStart, String indexStartPointer) {
 
@@ -374,6 +450,10 @@ public class PFS {
     return metadataStr.toCharArray();
   }
 
+  /**
+   * Updates the superblock information, including database name, number of FCB and PFS files, and block size.
+   * This method is primarily used to maintain metadata consistency across the PFS files.
+   */
   public void updateSuperBlock() {
     if(this.sequenceNumber != 0) {
       System.out.println("only update SuperBlock info in .db0");
@@ -407,10 +487,8 @@ public class PFS {
       this.content[superBlockNum][i] = dbName.charAt(i);
     }
 
-
     // 30 fillin fcb size
     this.content[superBlockNum][30] = String.valueOf(numOfFCBFiles).toCharArray()[0];
-
 
     // 31-35 is # of PFC file number
     String numOfPFSFilesString = String.valueOf(numOfPFSFiles);
@@ -426,7 +504,6 @@ public class PFS {
       }
     }
 
-
     // 36-38 is # of block size
     String blockSizeString = String.valueOf(blockSize);
     char[] blockSizeChars = blockSizeString.toCharArray();
@@ -441,11 +518,13 @@ public class PFS {
     }
   }
 
-
-
-
-  // function which accept the position in int, and mark the bitMap empty, and update blockLeft
-  // blockNum is from 0 to 3999, isBlockEmpty true means set the block to empty
+  /**
+   * Updates the bitmap to reflect the occupancy status of a specific block. Marks the block as either full or empty,
+   * and adjusts the count of blocks left accordingly.
+   *
+   * @param blockNum The block number to update. From 0 to 3999
+   * @param isBecomeFull A boolean indicating whether the block is becoming full (true) or empty (false).
+   */
   public void updateBitMap(int blockNum, boolean isBecomeFull) {
     int row = blockNum / (256 * 4);
     int col = (blockNum / 4) % 256;
@@ -489,7 +568,13 @@ public class PFS {
   // TODO: load Existings PFS, return the char[][]
   // char[][] loadExistingPFS()
 
-  // load the char[4000][256] into .db file
+
+  /**
+   * Writes the current state of the `content` 2D char array to the associated .db file. This method is used to persist
+   * changes made to the PFS structure, including updates to metadata, data blocks, and the bitmap.
+   *
+   * @throws IOException If an error occurs during file writing.
+   */
   public void writeCharArrayToFile() throws IOException {
     String fileName = this.db.getName() + ".db" + this.sequenceNumber;
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {

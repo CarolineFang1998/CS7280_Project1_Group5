@@ -6,9 +6,19 @@ import java.io.InputStreamReader;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * A simple file system simulation for managing .db0 database files and
+ * implementing basic database operations through a command-line interface (CLI).
+ */
 public class FileSystem {
-  public static final int BLOCK_SIZE = 256;
+  public static final int BLOCK_SIZE = 256; // The size for a block. Unit is byte
 
+  /**
+   * Finds and returns a set of unique database file names in the current directory,
+   * specifically targeting files with the .db0 extension.
+   *
+   * @return A Set of unique database names, excluding the .db0 extension.
+   */
   public Set<String> findUniqueDb0Files() {
     // Create a File object for the current directory
     File currentDir = new File(".");
@@ -152,34 +162,4 @@ public class FileSystem {
     }
   }
 
-  // Placeholder methods for database operations
-  private static void openDatabase(String dbName) {
-    System.out.println("Opening database: " + dbName);
-    // Implement database opening logic here
-  }
-
-  private static void putFile(String dbName, String fileName) {
-    System.out.println("Putting file into database: " + fileName);
-    // Implement put file logic here
-  }
-
-  private static void getFile(String dbName, String fileName) {
-    System.out.println("Getting file from database: " + fileName);
-    // Implement get file logic here
-  }
-
-  private static void listFiles(String dbName) {
-    System.out.println("Listing files in database.");
-    // Implement file listing logic here
-  }
-
-  private static void findRecord(String dbName, String key) {
-    System.out.println("Finding record with key: " + key);
-    // Implement find record logic here
-  }
-
-  private static void killDatabase(String dbName) {
-    System.out.println("Killing database: " + dbName);
-    // Implement database killing logic here
-  }
 }

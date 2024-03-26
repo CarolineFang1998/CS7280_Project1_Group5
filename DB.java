@@ -6,16 +6,26 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a database, handling the creation and management of PFS files
+ * and the upload and storage of data into these files.
+ */
 public class DB {
   // Variables
-  private String name;
-  private int blockSize;
+  private String name; // Name of the database.
+  private int blockSize; // Size of one blocks within the PFS files. Unit is byte.
   private int numOfFCBFiles; // Number of FCB files, default value 0
   private int numOfPFSFiles; // Number of PFC files, default value 1
-  private List<PFS> pfsList;
+  private List<PFS> pfsList; // List of PFS instances associated with this database.
 //  private List<FCB> fcbList;
 
-  // Constructor
+  /**
+   * Constructor for the DB class. Initializes a new database or loads an existing one.
+   *
+   * @param name The name of the database.
+   * @param blockSize The size of blocks within the PFS files.
+   * @param isLoad Indicates whether to load an existing database (true) or create a new one (false).
+   */
   public DB(String name, int blockSize, boolean isLoad) {
     System.out.println("creating DB "  + name);
     this.name = name;
@@ -30,6 +40,9 @@ public class DB {
     }
   }
 
+  /**
+   * Initializes the database by creating the initial PFS file and setting up the superblock.
+   */
   public void init () {
     this.numOfFCBFiles = 0; // Default value
     this.numOfPFSFiles = 0; // Default value
@@ -42,9 +55,14 @@ public class DB {
     pfsList.get(0).updateSuperBlock();
   }
 
-  // todo: init & load the previoud PFS file
 
-
+  /**
+   * Converts the content of a CSV file into a 2D char array, with each row representing a record.
+   *
+   * @param filePath The path to the CSV file.
+   * @return A 2D char array containing the records from the CSV file.
+   * @throws IOException If an error occurs while reading the file.
+   */
   private char[][] convertCSVToCharArray(String filePath) throws IOException {
     List<String> lines = new ArrayList<>();
     try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
@@ -78,6 +96,14 @@ public class DB {
   }
 
   // Method to combine 6 records into 1 blocks
+  /**
+   * Combines multiple records into blocks, adhering to the specified block size.
+   *  Combine 6 records and one pointer into 1 blocks
+   *  List<{dblock0 dblock1 dblock2 dblock3 dblock4 dblock5 -> block pointer}>
+   *
+   * @param data A 2D char array of records to be combined into blocks.
+   * @return A list of blocks, each represented as a char array.
+   */
   public List<char[]> recordsToBlock(char[][] data) {
     List<char[]> blocks = new ArrayList<>();
     int blockSize = 256; // The size of each block
@@ -109,7 +135,11 @@ public class DB {
     return blocks;
   }
 
-  // upload .csv files to FCB file
+  /**
+   * Uploads a CSV file as an FCB file, converting its contents into data blocks and storing them within PFS files.
+   *
+   * @param fileName The name of the CSV file to upload.
+   */
   public void uploadFCBFile(String fileName) {
     // load file, calculate the record size
     // transfer the file into a datablock char[]
@@ -141,6 +171,15 @@ public class DB {
     }
   }
 
+  /**
+   * Stores data blocks into PFS files, managing block allocation and updating superblock and FCB
+   * metadata as necessary.
+   *
+   * @param blocks A list of data blocks to store.
+   * @param fileName The name of the file associated with these data blocks.
+   * @param blocksSize The total number of blocks to store.
+   * @return A string representing the starting pointer of the stored data blocks.
+   */
   public void storeBlocksInPFS(List<char[]> blocks, String fileName, int blocksSize) {
     String dataStartPtr =  storeDataInPFSs(blocks, blocksSize);
 
@@ -161,6 +200,16 @@ public class DB {
     pfsList.get(0).updateSuperBlock();
   }
 
+  /**
+   * Stores data blocks across one or more PFS files, managing the distribution of blocks based on available space.
+   * This method allocates blocks to existing PFS files and creates new PFS files if needed to accommodate all blocks.
+   * It returns a pointer to the start of the data in the PFS structure, facilitating access to the stored data.
+   *
+   * @param blocks A list of data blocks (char arrays) that need to be stored in the PFS files.
+   * @param blocksSize The total number of blocks to be stored, guiding how many PFS files might be needed.
+   * @return A String representing the starting pointer of the data within the PFS structure, which can be used
+   *         to locate the data for future retrieval or modification.
+   */
   public String storeDataInPFSs(List<char[]> blocks, int blocksSize) {
     // start and end pointers
     // List<{startPointerString, endPointerString}>
@@ -176,10 +225,10 @@ public class DB {
     // try to put data in existing PFS file
     for(int i = 0; i < this.pfsList.size(); i++) {
       if (blockleft > 0 && pfsList.get(i).getBlockLeft() > 0) {
-        System.out.println("blockleft" + blockleft);
-        System.out.println("pfsList.get(i).getBlockLeft()" + pfsList.get(i).getBlockLeft());
+        // calculate how many blocks should I put in current file i
         int assignedBlock = Math.min(blockleft, pfsList.get(i).getBlockLeft());
-        System.out.println("subList from "+ blockCounter + " to "+ blockCounter + assignedBlock);
+
+        // add data to pfs file i, and return the start and end BlockPointer in string
         List<String> currStartNEndPtr = pfsList.get(i)
                 .addData(new ArrayList<>(blocks.subList(blockCounter, blockCounter + assignedBlock)),
                         keyPointerList);
@@ -187,11 +236,6 @@ public class DB {
         // if already inserted in another PFS file,
         if (dataStartNEndPtrs.size() > 0) {
           // update the last pfs end block pointer to the next pfs begin pointer
-//          System.out.println("keyPointerList..." );
-//          for(int j=0; j<keyPointerList.size(); j++) {
-//            System.out.println( keyPointerList.get(j).get(0) + " , " + keyPointerList.get(j).get(1));
-//          }
-          System.out.println("dataStartNEndPtrs.get(keyPointerList.size()-1).get(1)" + dataStartNEndPtrs.get(dataStartNEndPtrs.size()-1).get(1));
           BlockPointer lastBP =
                   new BlockPointer(dataStartNEndPtrs.get(dataStartNEndPtrs.size()-1).get(1));
           pfsList.get(lastBP.getPfsNumber())
@@ -204,14 +248,17 @@ public class DB {
       if (blockleft == 0) break;
     }
 
+    // If the current file are full, create new file and try to put blocks in it
     while(blockleft > 0) {
+      // create a new PFS file
       PFS pfs = new PFS(this, this.numOfPFSFiles);
       pfsList.add(pfs);
       pfsList.get(0).updateSuperBlockNumOfPFSFiles(this.numOfPFSFiles);
 
-      System.out.println("this.numOfPFSFiles" + this.numOfPFSFiles);
-
+      // calculate how many blocks should I put in current file i
       int assignedBlock = Math.min(blockleft, pfs.getBlockLeft());
+
+      // add blocks to current pfs file
       List<String> currStartNEndPtr = pfs.addData(new ArrayList<>(blocks.subList(blockCounter,
               blockCounter + assignedBlock)), keyPointerList);
 
@@ -219,10 +266,11 @@ public class DB {
       // update the last pfs end block pointer to the next pfs begin pointer
       if (dataStartNEndPtrs.size() > 0) {
         BlockPointer lastBP = new BlockPointer(dataStartNEndPtrs.get(dataStartNEndPtrs.size()-1).get(1));
-        System.out.println("updating db" + lastBP.getPfsNumber() + " at block " + lastBP.getBlockNumber()
-                + " to " + currStartNEndPtr.get(0));
+//        System.out.println("updating db" + lastBP.getPfsNumber() + " at block " + lastBP.getBlockNumber()
+//                + " to " + currStartNEndPtr.get(0));
         pfsList.get(lastBP.getPfsNumber())
                 .updateBlockPointer(lastBP.getBlockNumber(), currStartNEndPtr.get(0));
+
         // write the current char array to .dbfile
         try {
           pfsList.get(lastBP.getPfsNumber()).writeCharArrayToFile();
