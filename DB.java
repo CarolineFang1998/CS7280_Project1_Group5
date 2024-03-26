@@ -39,6 +39,7 @@ public class DB {
     //    block
     PFS pfs = new PFS(this, 0);
     pfsList.add(pfs);
+    pfsList.get(0).updateSuperBlock();
   }
 
   // todo: init & load the previoud PFS file
@@ -156,6 +157,8 @@ public class DB {
     // todo: hard coded, change it
     pfsList.get(0).updateFCBMetadeta(fileName, LocalDateTime.now(), blocksSize,
             dataStartPtr, "9999999");
+    this.numOfFCBFiles++;
+    pfsList.get(0).updateSuperBlock();
   }
 
   public String storeDataInPFSs(List<char[]> blocks, int blocksSize) {
@@ -189,7 +192,8 @@ public class DB {
 //            System.out.println( keyPointerList.get(j).get(0) + " , " + keyPointerList.get(j).get(1));
 //          }
           System.out.println("dataStartNEndPtrs.get(keyPointerList.size()-1).get(1)" + dataStartNEndPtrs.get(dataStartNEndPtrs.size()-1).get(1));
-          BlockPointer lastBP = new BlockPointer(dataStartNEndPtrs.get(dataStartNEndPtrs.size()-1).get(1));
+          BlockPointer lastBP =
+                  new BlockPointer(dataStartNEndPtrs.get(dataStartNEndPtrs.size()-1).get(1));
           pfsList.get(lastBP.getPfsNumber())
                   .updateBlockPointer(lastBP.getBlockNumber(), currStartNEndPtr.get(0));
         }
@@ -201,11 +205,8 @@ public class DB {
     }
 
     while(blockleft > 0) {
-      // Todo: test this
-
       PFS pfs = new PFS(this, this.numOfPFSFiles);
       pfsList.add(pfs);
-      this.numOfPFSFiles++;
       pfsList.get(0).updateSuperBlockNumOfPFSFiles(this.numOfPFSFiles);
 
       System.out.println("this.numOfPFSFiles" + this.numOfPFSFiles);
@@ -216,10 +217,20 @@ public class DB {
 
       // if already inserted in another PFS file,
       // update the last pfs end block pointer to the next pfs begin pointer
-      if (keyPointerList.size() > 0) {
-        BlockPointer lastBP = new BlockPointer(keyPointerList.get(keyPointerList.size()-1).get(1));
+      if (dataStartNEndPtrs.size() > 0) {
+        BlockPointer lastBP = new BlockPointer(dataStartNEndPtrs.get(dataStartNEndPtrs.size()-1).get(1));
+        System.out.println("updating db" + lastBP.getPfsNumber() + " at block " + lastBP.getBlockNumber()
+                + " to " + currStartNEndPtr.get(0));
         pfsList.get(lastBP.getPfsNumber())
                 .updateBlockPointer(lastBP.getBlockNumber(), currStartNEndPtr.get(0));
+        // write the current char array to .dbfile
+        try {
+          pfsList.get(lastBP.getPfsNumber()).writeCharArrayToFile();
+          System.out.println("File written successfully.");
+        } catch (IOException e) {
+          System.err.println("An error occurred while writing the file: " + e.getMessage());
+        }
+
       }
       dataStartNEndPtrs.add(currStartNEndPtr);
 

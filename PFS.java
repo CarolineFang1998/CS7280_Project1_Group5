@@ -6,6 +6,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This object is the PFS which is content of .db file.
+ * It could help the database stores metadata, data blocks and index block.
+ * For all the .db files, block 0~3 are hexadecimal bitmap.
+ * For .db0, block 4 is the database metadata. block 5 is the FCB metadetas
+ */
 public class PFS {
   private DB db; // A DB object
   private int sequenceNumber; // An integer sequence number
@@ -13,8 +19,15 @@ public class PFS {
   private int blockLeft; // how many block left for this PFS file
   private int emptyBlock; // block # for next empty block
 
+  /**
+   * Constructor for creating a new PFS instance.
+   * Initializes the content array, checks for the existence of the file, and prepares the bitmap.
+   *
+   * @param db The DB object this PFS is associated with.
+   * @param PFSNumber The sequence number for this PFS file. Start with 0
+   */
   public PFS(DB db, int PFSNumber) {
-    System.out.println("creating PFS" + PFSNumber);
+    System.out.println("creating PFS .db" + PFSNumber + "...");
     this.db = db;
     this.sequenceNumber = PFSNumber; // if .db0, sequenceNumber = 0
     this.content = new char[4000][db.getBlockSize()]; // first block is always bitmap
@@ -26,7 +39,7 @@ public class PFS {
       // TODO: load existing PFS
     } else {
       this.blockLeft = 4000;
-      if(PFSNumber == 0) {
+      if(this.sequenceNumber == 0) {
         System.out.println("PFSNumber == 0");
         // init the .db0 with write all the superblock info & BitMap(with first 3 blocks full),
         // leave 1 block for FCB block
@@ -79,7 +92,7 @@ public class PFS {
 
 //      System.out.println("Empty Block " + currBlock + ":");
 //      System.out.println(new String(block));
-      System.out.println("currBlock" + currBlock);
+//      System.out.println("currBlock" + currBlock);
       System.arraycopy(block, 0, this.content[currBlock], 0, block.length);
 
       String pointerString;
@@ -110,7 +123,6 @@ public class PFS {
     } catch (IOException e) {
       System.err.println("An error occurred while writing the file: " + e.getMessage());
     }
-    updateSuperBlock();
 
 //    System.out.println("keyPointerList.size() " + keyPointerList.size());
     return startNEndPtrs;
@@ -213,10 +225,6 @@ public class PFS {
     db.setNumOfPFSFiles(db.getNumOfPFSFiles()+1);
 
     initBitMap();
-
-    // db name(first 30 , offset 0~29), db numOfFCBFiles(1 byte), db numOfPFSFiles(5 bytes),
-    // db blocksize(3 bytes), .
-    updateSuperBlock(); // TOdo: only update the PFS file num
   }
 
   // only update SuperBlock info in .db0
@@ -231,7 +239,7 @@ public class PFS {
 
       for( ;it <= 35; it++) {
         if(it < startingI + numOfPFSFilesChars.length) {
-          this.content[superBlockNum][it] = numOfPFSFilesChars[it-startingI];
+          this.content[superBlockNum][it] = numOfPFSFilesChars[it - startingI];
         } else {
           this.content[superBlockNum][it] = ' ';
         }
@@ -308,7 +316,7 @@ public class PFS {
 
             // Calculate and return the block number
             int blockNumber = (row * 256 * 4) + (col * 4) + bit;
-            System.out.println("Next empty blockNumber " + blockNumber);
+//            System.out.println("Next empty blockNumber " + blockNumber);
             return blockNumber;
           }
         }
@@ -325,7 +333,6 @@ public class PFS {
     System.arraycopy(metadeta, 0, this.content[5], 0, metadeta.length);
 
     // update super block
-    db.setNumOfFCBFiles(db.getNumOfFCBFiles()+1);
     updateSuperBlock();
 
     // write the current char array to .dbfile
