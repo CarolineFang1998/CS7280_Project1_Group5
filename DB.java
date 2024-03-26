@@ -66,11 +66,11 @@ public class DB {
 
     // Since every line is now exactly 40 characters, set the second dimension to 40
     char[][] records = new char[lines.size()][40];
+    System.out.println("records.length " + records.length);
 
     for (int i = 0; i < lines.size(); i++) {
       char[] lineChars = lines.get(i).toCharArray();
       System.arraycopy(lineChars, 0, records[i], 0, lineChars.length);
-      System.out.println(records[i].toString());
     }
 
     return records;
@@ -117,6 +117,7 @@ public class DB {
     String filePath = "./csvs/" + fileName;
     try {
       char[][] data = convertCSVToCharArray(filePath);
+      System.out.println("data.length " + data.length);
       List<char[]> blocks = recordsToBlock(data);
 
 //      System.out.println("Printing records (first 40 chars each):");
@@ -172,15 +173,23 @@ public class DB {
     // try to put data in existing PFS file
     for(int i = 0; i < this.pfsList.size(); i++) {
       if (blockleft > 0 && pfsList.get(i).getBlockLeft() > 0) {
+        System.out.println("blockleft" + blockleft);
+        System.out.println("pfsList.get(i).getBlockLeft()" + pfsList.get(i).getBlockLeft());
         int assignedBlock = Math.min(blockleft, pfsList.get(i).getBlockLeft());
+        System.out.println("subList from "+ blockCounter + " to "+ blockCounter + assignedBlock);
         List<String> currStartNEndPtr = pfsList.get(i)
                 .addData(new ArrayList<>(blocks.subList(blockCounter, blockCounter + assignedBlock)),
                         keyPointerList);
 
         // if already inserted in another PFS file,
-        if (keyPointerList.size() > 0) {
+        if (dataStartNEndPtrs.size() > 0) {
           // update the last pfs end block pointer to the next pfs begin pointer
-          BlockPointer lastBP = new BlockPointer(keyPointerList.get(keyPointerList.size()-1).get(1));
+//          System.out.println("keyPointerList..." );
+//          for(int j=0; j<keyPointerList.size(); j++) {
+//            System.out.println( keyPointerList.get(j).get(0) + " , " + keyPointerList.get(j).get(1));
+//          }
+          System.out.println("dataStartNEndPtrs.get(keyPointerList.size()-1).get(1)" + dataStartNEndPtrs.get(dataStartNEndPtrs.size()-1).get(1));
+          BlockPointer lastBP = new BlockPointer(dataStartNEndPtrs.get(dataStartNEndPtrs.size()-1).get(1));
           pfsList.get(lastBP.getPfsNumber())
                   .updateBlockPointer(lastBP.getBlockNumber(), currStartNEndPtr.get(0));
         }
@@ -194,8 +203,12 @@ public class DB {
     while(blockleft > 0) {
       // Todo: test this
 
-      PFS pfs = new PFS(this, numOfPFSFiles);
+      PFS pfs = new PFS(this, this.numOfPFSFiles);
       pfsList.add(pfs);
+      this.numOfPFSFiles++;
+      pfsList.get(0).updateSuperBlockNumOfPFSFiles(this.numOfPFSFiles);
+
+      System.out.println("this.numOfPFSFiles" + this.numOfPFSFiles);
 
       int assignedBlock = Math.min(blockleft, pfs.getBlockLeft());
       List<String> currStartNEndPtr = pfs.addData(new ArrayList<>(blocks.subList(blockCounter,
@@ -209,10 +222,13 @@ public class DB {
                 .updateBlockPointer(lastBP.getBlockNumber(), currStartNEndPtr.get(0));
       }
       dataStartNEndPtrs.add(currStartNEndPtr);
+
+      // update counters
       blockleft -= assignedBlock;
       blockCounter += assignedBlock;
     }
-    return dataStartNEndPtrs.get(0).get(0);
+
+    return dataStartNEndPtrs.get(0).get(0); // return the begin pointer
   }
 
   // todo: updateDataBlockPointer

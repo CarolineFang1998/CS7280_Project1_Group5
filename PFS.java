@@ -33,9 +33,9 @@ public class PFS {
         // write this into .db0 file
         initFirstPFS();
         System.out.println("Number of FCB Files out: " + this.db.getNumOfFCBFiles());
+        System.out.println("blockLeft: " + this.blockLeft);
       } else {
         System.out.println("PFSNumber == " + PFSNumber);
-        // TODO: write create .dbN
         // only create a .dbN file and init bitmap
         // write this into .dbN file
         initMorePFS();
@@ -59,6 +59,9 @@ public class PFS {
   // datablock(no space): dblock0 dblock1 dblock2 dblock3 dblock4 dblock5 -> block pointer
   // returns the start pointer and end pointer in string
   public List<String> addData(List<char[]> blocks, List<List<String>> keyPointerList) {
+    this.emptyBlock = findNextFreeBlock();
+
+    System.out.println("addData blocks.size() " + blocks.size());
     BlockPointer startBp = new BlockPointer(this.sequenceNumber, this.emptyBlock);
 
     List<String> startNEndPtrs = new ArrayList<>();
@@ -76,7 +79,7 @@ public class PFS {
 
 //      System.out.println("Empty Block " + currBlock + ":");
 //      System.out.println(new String(block));
-
+      System.out.println("currBlock" + currBlock);
       System.arraycopy(block, 0, this.content[currBlock], 0, block.length);
 
       String pointerString;
@@ -97,7 +100,7 @@ public class PFS {
       updateBlockPointer(currBlock, pointerString);
 
       // insert value into keyPointerList
-      updateKeyPointerList(block, keyPointerList, currBlock);
+//      updateKeyPointerList(block, keyPointerList, currBlock);
       this.emptyBlock = nextEmptyBlock;
     }
 
@@ -180,7 +183,7 @@ public class PFS {
       this.content[0][i] = '0';
       this.content[1][i] = '0';
       this.content[2][i] = '0';
-      this.content[4][i] = '0';
+      this.content[3][i] = '0';
     }
     // update the block 0, 1, 2, 3 full
     updateBitMap(0, true);
@@ -194,17 +197,18 @@ public class PFS {
     db.setNumOfPFSFiles(db.getNumOfPFSFiles()+1);
 
     initBitMap();
-    // fill the 5th line with superblock info, update the block 0 tobe full
-    updateBitMap(4, true);
+
     // leave the 6th block, but mark it empty. it will be the FCB infos.
     updateBitMap(5, true);
 
+    // fill the 5th line with superblock info, update the block 0 tobe full
     // db name(first 30 , offset 0~29), db numOfFCBFiles(1 byte), db numOfPFSFiles(5 bytes),
     // db blocksize(3 bytes) .
     updateSuperBlock();
+
   }
 
-  // init .db1 & 1+ file
+  // init .db1 & 1+ file, only initBitMap
   public void initMorePFS(){
     db.setNumOfPFSFiles(db.getNumOfPFSFiles()+1);
 
@@ -212,7 +216,57 @@ public class PFS {
 
     // db name(first 30 , offset 0~29), db numOfFCBFiles(1 byte), db numOfPFSFiles(5 bytes),
     // db blocksize(3 bytes), .
-    updateSuperBlock();
+    updateSuperBlock(); // TOdo: only update the PFS file num
+  }
+
+  // only update SuperBlock info in .db0
+  public void updateSuperBlockNumOfPFSFiles(int numOfPFSFiles) {
+    if (this.sequenceNumber == 0) {
+      int superBlockNum = 4; // super block is in 5th block
+      // 31-35 is # of PFC file number
+      String numOfPFSFilesString = String.valueOf(numOfPFSFiles);
+      char[] numOfPFSFilesChars = numOfPFSFilesString.toCharArray();
+      int it=31;
+      int startingI = 31;
+
+      for( ;it <= 35; it++) {
+        if(it < startingI + numOfPFSFilesChars.length) {
+          this.content[superBlockNum][it] = numOfPFSFilesChars[it-startingI];
+        } else {
+          this.content[superBlockNum][it] = ' ';
+        }
+      }
+
+    } else {
+      System.out.println("only update SuperBlock info in .db0");
+    }
+
+    // write the current char array to .dbfile
+    try {
+      writeCharArrayToFile();
+      System.out.println("File written successfully.");
+    } catch (IOException e) {
+      System.err.println("An error occurred while writing the file: " + e.getMessage());
+    }
+  }
+
+  // only update SuperBlock info in .db0
+  public void updateSuperBlockNumOfFCBFiles(int numOfFCBFiles) {
+    if (this.sequenceNumber == 0) {
+      int superBlockNum = 4; // super block is in 5th block
+      // 30 fillin fcb size
+      this.content[superBlockNum][30] = String.valueOf(numOfFCBFiles).toCharArray()[0];
+    } else {
+      System.out.println("only update SuperBlock info in .db0");
+    }
+
+    // write the current char array to .dbfile
+    try {
+      writeCharArrayToFile();
+      System.out.println("File written successfully.");
+    } catch (IOException e) {
+      System.err.println("An error occurred while writing the file: " + e.getMessage());
+    }
   }
 
   // TODO: check if this is correct
@@ -236,23 +290,31 @@ public class PFS {
     return blocksLeft;
   }
 
-  // TODO: check if this is correct
   public int findNextFreeBlock() {
-    // Loop through each character in the bitmap (each character represents 4 blocks)
-    for (int hexIndex = 0; hexIndex < this.content[0].length; hexIndex++) {
-      char hexChar = this.content[0][hexIndex];
-      int value = Character.digit(hexChar, 16);
+    // Loop through each row and column of the content array
+    for (int row = 0; row < 4; row++) {
+      for (int col = 0; col < 256; col++) {
+        char hexChar = this.content[row][col];
 
-      // Convert the hex value to its binary representation
-      for (int bitPosition = 0; bitPosition < 4; bitPosition++) {
-        // Check if the bit is 0 (indicating a free block)
-        if ((value & (1 << (3 - bitPosition))) == 0) {
-          // Calculate and return the block's index
-          return hexIndex * 4 + bitPosition;
+        // Convert the hexadecimal character to a binary string
+        String binaryString = Integer.toBinaryString(Character.digit(hexChar, 16));
+
+        // Left-pad the binary string with zeros to ensure it has 4 bits
+        binaryString = String.format("%4s", binaryString).replace(' ', '0');
+
+        // Check each bit to find the first '0'
+        for (int bit = 0; bit < 4; bit++) {
+          if (binaryString.charAt(bit) == '0') {
+
+            // Calculate and return the block number
+            int blockNumber = (row * 256 * 4) + (col * 4) + bit;
+            System.out.println("Next empty blockNumber " + blockNumber);
+            return blockNumber;
+          }
         }
       }
     }
-    // If no free blocks are found, return -1 or an appropriate value to indicate this
+    // If no free block is found, return -1 or an appropriate error value
     return -1;
   }
 
@@ -260,8 +322,7 @@ public class PFS {
   public void updateFCBMetadeta(String FCBName, LocalDateTime time, int size,
                                   String dataBlockStart, String indexStartPointer) {
     char[] metadeta = generateFCBMetadata(FCBName, time, size, dataBlockStart, indexStartPointer);
-//    this.content[4] = metadeta;
-    System.arraycopy(metadeta, 0, this.content[4], 0, metadeta.length);
+    System.arraycopy(metadeta, 0, this.content[5], 0, metadeta.length);
 
     // update super block
     db.setNumOfFCBFiles(db.getNumOfFCBFiles()+1);
@@ -307,8 +368,12 @@ public class PFS {
   }
 
   public void updateSuperBlock() {
+    if(this.sequenceNumber != 0) {
+      System.out.println("only update SuperBlock info in .db0");
+    }
+    int superBlockNum = 4; // super block is in 5th block
     // Update SuperBlock will be in the block 3
-    updateBitMap(3, true);
+    updateBitMap(superBlockNum, true);
 
     System.out.println("Database Name: " + this.db.getName());
     System.out.println("Number of FCB Files: " + this.db.getNumOfFCBFiles());
@@ -332,12 +397,12 @@ public class PFS {
     }
     // fillin db name
     for (int i = 0; i < dbName.length(); i++) {
-      this.content[3][i] = dbName.charAt(i);
+      this.content[superBlockNum][i] = dbName.charAt(i);
     }
 
 
     // 30 fillin fcb size
-    this.content[3][30] = String.valueOf(numOfFCBFiles).toCharArray()[0];
+    this.content[superBlockNum][30] = String.valueOf(numOfFCBFiles).toCharArray()[0];
 
 
     // 31-35 is # of PFC file number
@@ -348,9 +413,9 @@ public class PFS {
 
     for( ;it <= 35; it++) {
       if(it < startingI + numOfPFSFilesChars.length) {
-        this.content[3][it] = numOfPFSFilesChars[it-startingI];
+        this.content[superBlockNum][it] = numOfPFSFilesChars[it-startingI];
       } else {
-        this.content[3][it] = ' ';
+        this.content[superBlockNum][it] = ' ';
       }
     }
 
@@ -362,9 +427,9 @@ public class PFS {
 
     for(; it <= 38; it++) {
       if(it < startingI + blockSizeChars.length) {
-        this.content[3][it] = blockSizeChars[it - startingI];
+        this.content[superBlockNum][it] = blockSizeChars[it - startingI];
       } else {
-        this.content[3][it] = ' ';
+        this.content[superBlockNum][it] = ' ';
       }
     }
   }
@@ -375,12 +440,14 @@ public class PFS {
   // function which accept the position in int, and mark the bitMap empty, and update blockLeft
   // blockNum is from 0 to 3999, isBlockEmpty true means set the block to empty
   public void updateBitMap(int blockNum, boolean isBecomeFull) {
-    int hexIndex = blockNum / 4; // Determine the hex character's index in the bitmap
-    int bitPosition = blockNum % 4; // Determine the bit's position within the hex character
+    int row = blockNum / (256 * 4);
+    int col = (blockNum / 4) % 256;
+    int bitPosition = blockNum % 4;
+
 //    System.out.println("hexIndex"+hexIndex+" bitPosition " + bitPosition);
 
     // Convert the hex character to binary
-    char hexChar = this.content[0][hexIndex];
+    char hexChar = this.content[row][col];
     int value = Character.digit(hexChar, 16);
     int[] binary = new int[4];
     for (int i = 3; i >= 0; i--) {
@@ -407,7 +474,7 @@ public class PFS {
     // Convert the binary back to a single hexadecimal character
     // 1000 (8) is for 1st block full, 0100 (4) is for 2nd block full
     int newValue = binary[0] * 8 + binary[1] * 4 + binary[2] * 2 + binary[3];
-    this.content[0][hexIndex] = Integer.toHexString(newValue).toUpperCase().charAt(0);
+    this.content[row][col] = Integer.toHexString(newValue).toUpperCase().charAt(0);
   }
 
 
