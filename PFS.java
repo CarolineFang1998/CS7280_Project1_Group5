@@ -9,9 +9,9 @@ import java.util.List;
 public class PFS {
   private DB db; // A DB object
   private int sequenceNumber; // An integer sequence number
-  private char[][] content;
-  private int blockLeft;
-  private int emptyBlock;
+  private char[][] content; // The char[4000][256] stores all the data
+  private int blockLeft; // how many block left for this PFS file
+  private int emptyBlock; // block # for next empty block
 
   public PFS(DB db, int PFSNumber) {
     System.out.println("creating PFS" + PFSNumber);
@@ -28,17 +28,18 @@ public class PFS {
       this.blockLeft = 4000;
       if(PFSNumber == 0) {
         System.out.println("PFSNumber == 0");
-        // init the .db0 with write all the superblock info & BitMap(with first 3 blocks full), leave 1 block for FCB block
-        initFirstPFS();
+        // init the .db0 with write all the superblock info & BitMap(with first 3 blocks full),
+        // leave 1 block for FCB block
         // write this into .db0 file
+        initFirstPFS();
         System.out.println("Number of FCB Files out: " + this.db.getNumOfFCBFiles());
       } else {
+        System.out.println("PFSNumber == " + PFSNumber);
         // TODO: write create .dbN
         // only create a .dbN file and init bitmap
-//        initMorePFS();
         // write this into .dbN file
+        initMorePFS();
       }
-
     }
 
     this.emptyBlock = findNextFreeBlock();
@@ -54,9 +55,10 @@ public class PFS {
   }
 
   // blocks is the already produced blocks,
-  // continuePFSNum means the end block will be in the next PFS file, -1 is this is the only
-  // datablock(no space): dblock0 dblock1 dblock2 dblock3 dblock4 dblock5 ->
-  public List<String> addData(List<char[]> blocks, List<List<String>> keyPointerList, int continuePFSNum) {
+  // keyPointerList is the start and end pointer in string
+  // datablock(no space): dblock0 dblock1 dblock2 dblock3 dblock4 dblock5 -> block pointer
+  // returns the start pointer and end pointer in string
+  public List<String> addData(List<char[]> blocks, List<List<String>> keyPointerList) {
     BlockPointer startBp = new BlockPointer(this.sequenceNumber, this.emptyBlock);
 
     List<String> startNEndPtrs = new ArrayList<>();
@@ -75,14 +77,10 @@ public class PFS {
 //      System.out.println("Empty Block " + currBlock + ":");
 //      System.out.println(new String(block));
 
-
       System.arraycopy(block, 0, this.content[currBlock], 0, block.length);
-//      this.content[this.emptyBlock] = block;
-//      for (int i = 0; i < block.length; i++) {
-//        this.content[this.emptyBlock][i] = block[i];
-//      }
-      String pointerString = null;
-      updateBitMap(currBlock, true);
+
+      String pointerString;
+      updateBitMap(currBlock, true); // mark this block full and update blockLeft
       int nextEmptyBlock = findNextFreeBlock();
 
       if (counter < blocks.size()) {
@@ -90,16 +88,10 @@ public class PFS {
         BlockPointer bp = new BlockPointer(sequenceNumber, nextEmptyBlock);
         pointerString = bp.getPtrString();
       } else {
-        // if this is the last block
-        if(continuePFSNum == -1) {
-          // the end data block
-          pointerString = "9999999";
-        } else {
-          BlockPointer curDP = new BlockPointer(sequenceNumber, currBlock);
-          pointerString =  curDP.getPtrString();
-          // TODO: this might be continue in next PFS file
-        }
-        startNEndPtrs.add(pointerString);
+        // if this is the end block
+        pointerString = "9999999";
+        BlockPointer curDP = new BlockPointer(sequenceNumber, currBlock);
+        startNEndPtrs.add(curDP.getPtrString());
       }
 
       updateBlockPointer(currBlock, pointerString);
@@ -158,7 +150,7 @@ public class PFS {
   }
 
 
-
+  // update certain block pointer in the end of the data block
   void updateBlockPointer(int blockNum, String pointer) {
     // Validate the pointer length
     if (pointer == null || pointer.length() != 7) {
@@ -178,32 +170,48 @@ public class PFS {
   }
 
   // todo: updateDataBlockPointer
+  // this pointer is used in index file
 //  int void updateDataBlockPointer(int blockNum, int recordNum, String Pointer) {
 //
 //  }
-
-
-  public void initFirstPFS(){
-    db.setNumOfPFSFiles(db.getNumOfPFSFiles()+1);
-
+  public void initBitMap() {
     // fill the four line with Hexadecimal bit map 0-F, first 3 blocks char
     for (int i = 0; i < 256; i++) {
       this.content[0][i] = '0';
       this.content[1][i] = '0';
       this.content[2][i] = '0';
+      this.content[4][i] = '0';
     }
-    // update the block 0, 1, 2 full
+    // update the block 0, 1, 2, 3 full
     updateBitMap(0, true);
     updateBitMap(1, true);
     updateBitMap(2, true);
+    updateBitMap(3, true);
+  }
 
+ // init .db0 file
+  public void initFirstPFS(){
+    db.setNumOfPFSFiles(db.getNumOfPFSFiles()+1);
 
-
-    // leave the third block, but mark it empty. it will be the FCB infos.
+    initBitMap();
+    // fill the 5th line with superblock info, update the block 0 tobe full
     updateBitMap(4, true);
+    // leave the 6th block, but mark it empty. it will be the FCB infos.
+    updateBitMap(5, true);
 
-    // fill the fifth line with superblock info, update the block 0 tobe full
-    // db name(first 30 , offset 0~29), db numOfFCBFiles(1 byte), db numOfPFSFiles(5 bytes), db blocksize(3 bytes), .
+    // db name(first 30 , offset 0~29), db numOfFCBFiles(1 byte), db numOfPFSFiles(5 bytes),
+    // db blocksize(3 bytes) .
+    updateSuperBlock();
+  }
+
+  // init .db1 & 1+ file
+  public void initMorePFS(){
+    db.setNumOfPFSFiles(db.getNumOfPFSFiles()+1);
+
+    initBitMap();
+
+    // db name(first 30 , offset 0~29), db numOfFCBFiles(1 byte), db numOfPFSFiles(5 bytes),
+    // db blocksize(3 bytes), .
     updateSuperBlock();
   }
 
@@ -223,7 +231,6 @@ public class PFS {
             blocksLeft++; // Increment for each block that is free
           }
         }
-
       }
     }
     return blocksLeft;
@@ -365,7 +372,7 @@ public class PFS {
 
 
 
-  // function which accept the position in int, and mark the bitMap empty, and update the block size
+  // function which accept the position in int, and mark the bitMap empty, and update blockLeft
   // blockNum is from 0 to 3999, isBlockEmpty true means set the block to empty
   public void updateBitMap(int blockNum, boolean isBecomeFull) {
     int hexIndex = blockNum / 4; // Determine the hex character's index in the bitmap

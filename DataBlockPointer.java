@@ -5,7 +5,7 @@ public class DataBlockPointer {
   private String ptrString; // Combined 8 digit string representation
 
   // Constructor using integers for PFS number and block number
-  // if pfc # = 1, block # = 0. the ptrString will be 0010000.
+  // if pfc # = 1, block # = 0, record # = 1. the ptrString will be 001000001.
   public DataBlockPointer(int pfsNumber, int blockNumber, int recordNumber) {
     this.pfsNumber = pfsNumber;
     this.blockNumber = blockNumber;
@@ -14,7 +14,7 @@ public class DataBlockPointer {
     this.ptrString = String.format("%03d%04d%01d", pfsNumber, blockNumber, recordNumber);
   }
 
-  // Constructor using a 7 character string
+  // Constructor using a 8 character string
   public DataBlockPointer(String ptrString) {
     if (ptrString == null || ptrString.length() != 8) {
       throw new IllegalArgumentException("PtrString must be exactly 8 digits long");

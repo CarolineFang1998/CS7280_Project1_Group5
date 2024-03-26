@@ -22,9 +22,12 @@ public class DB {
     this.blockSize = blockSize;
     this.pfsList = new ArrayList<>();
 //    this.fcbList = new ArrayList<>();
-
-    // todo, load the previous pfs
-    init();
+    if(!isLoad) {
+      init();
+    } else {
+      // todo, load the previous pfs files
+      // todo: load the fcb lists
+    }
   }
 
   public void init () {
@@ -32,12 +35,14 @@ public class DB {
     this.numOfPFSFiles = 0; // Default value
 
     // create a new PFS file db0
-    // -> write all the BitMap(with first 3 blocks full) & superblock info, leave 1 block for FCB block
+    // -> write all the BitMap(with first 3 blocks full) & superblock info, leave 1 block for FCB
+    //    block
     PFS pfs = new PFS(this, 0);
     pfsList.add(pfs);
   }
 
   // todo: init & load the previoud PFS file
+
 
   private char[][] convertCSVToCharArray(String filePath) throws IOException {
     List<String> lines = new ArrayList<>();
@@ -71,7 +76,7 @@ public class DB {
     return records;
   }
 
-  // Method to combine records into blocks
+  // Method to combine 6 records into 1 blocks
   public List<char[]> recordsToBlock(char[][] data) {
     List<char[]> blocks = new ArrayList<>();
     int blockSize = 256; // The size of each block
@@ -103,7 +108,7 @@ public class DB {
     return blocks;
   }
 
-
+  // upload .csv files to FCB file
   public void uploadFCBFile(String fileName) {
     // load file, calculate the record size
     // transfer the file into a datablock char[]
@@ -126,16 +131,33 @@ public class DB {
 //        System.out.println(); // Add an extra newline for better readability between blocks
 //        blockNumber++;
 //      }
-
-      // todo: block size shoule add up index block
-      storeDataInPFS(blocks, fileName, blocks.size());
+      // todo: block size should add up index block
+      storeBlocksInPFS(blocks, fileName, blocks.size());
 
     } catch (IOException e) {
       System.err.println("An error occurred while reading the file: " + e.getMessage());
     }
-
   }
-  public void storeDataInPFS(List<char[]> blocks, String fileName, int blocksSize) {
+
+  public void storeBlocksInPFS(List<char[]> blocks, String fileName, int blocksSize) {
+    String dataStartPtr =  storeDataInPFSs(blocks, blocksSize);
+
+    // todo: implement the fcb metadata class
+    // FCB name: 20 char, time: 14 char (sample:  "15/SEP/23:25PM")
+    // number of blocks 10 int.  data start block(7 char): default: 9999999,
+    // index start block(7 char): default: 9999999,
+
+    // add index block
+    // TODO: function1: generate a index list char[]
+    // TODO: function2: see how many space we need and generate a List<Empty Block Lists String> and
+    //  replace all the pointer to corresponding String
+
+    // todo: hard coded, change it
+    pfsList.get(0).updateFCBMetadeta(fileName, LocalDateTime.now(), blocksSize,
+            dataStartPtr, "9999999");
+  }
+
+  public String storeDataInPFSs(List<char[]> blocks, int blocksSize) {
     // start and end pointers
     // List<{startPointerString, endPointerString}>
     List<List<String>> dataStartNEndPtrs = new ArrayList<>();
@@ -143,35 +165,54 @@ public class DB {
     // List of keyValues
     // List<{key:dataBlockPointer}>
     List<List<String>> keyPointerList = new ArrayList<>();
-
-    // if there is space left in the pfs
-    if (pfsList.get(0).getBlockLeft() > 0) {
-        // todo: implement the fcb metadata class
-      // FCB name: 20 char, time: 14 char (sample:  "15/SEP/23:25PM")
-      // number of blocks 10 int.  data start block(7 char): default: 9999999,
-      // index start block(7 char): default: 9999999,
-
-      dataStartNEndPtrs.add(pfsList.get(0).addData(blocks, keyPointerList, -1));
-      // add index block
-      // TODO: function1: generate a index list char[]
-      // TODO: function2: see how many space we need and generate a List<Empty Block Lists String> and
-      //  replace all the pointer to corresponding String
-
-      // todo: hard coded, change it
-      pfsList.get(0).updateFCBMetadeta(fileName, LocalDateTime.now(), blocksSize,
-              dataStartNEndPtrs.get(0).get(0), "9999999");
-
-      // data to key:value pair
+    int blockleft = blocksSize; // counter for data block needs to insert
+    int blockCounter = 0; // counter for data block needs to insert
 
 
+    // try to put data in existing PFS file
+    for(int i = 0; i < this.pfsList.size(); i++) {
+      if (blockleft > 0 && pfsList.get(i).getBlockLeft() > 0) {
+        int assignedBlock = Math.min(blockleft, pfsList.get(i).getBlockLeft());
+        List<String> currStartNEndPtr = pfsList.get(i)
+                .addData(new ArrayList<>(blocks.subList(blockCounter, blockCounter + assignedBlock)),
+                        keyPointerList);
 
-
-
-
-      // TODO: add index block as well
-      // TODO: the end pointer could be in the next pfs file
+        // if already inserted in another PFS file,
+        if (keyPointerList.size() > 0) {
+          // update the last pfs end block pointer to the next pfs begin pointer
+          BlockPointer lastBP = new BlockPointer(keyPointerList.get(keyPointerList.size()-1).get(1));
+          pfsList.get(lastBP.getPfsNumber())
+                  .updateBlockPointer(lastBP.getBlockNumber(), currStartNEndPtr.get(0));
+        }
+        dataStartNEndPtrs.add(currStartNEndPtr);
+        blockleft -= assignedBlock;
+        blockCounter += assignedBlock;
+      }
+      if (blockleft == 0) break;
     }
-    // TODO: check other block could store
+
+    while(blockleft > 0) {
+      // Todo: test this
+
+      PFS pfs = new PFS(this, numOfPFSFiles);
+      pfsList.add(pfs);
+
+      int assignedBlock = Math.min(blockleft, pfs.getBlockLeft());
+      List<String> currStartNEndPtr = pfs.addData(new ArrayList<>(blocks.subList(blockCounter,
+              blockCounter + assignedBlock)), keyPointerList);
+
+      // if already inserted in another PFS file,
+      // update the last pfs end block pointer to the next pfs begin pointer
+      if (keyPointerList.size() > 0) {
+        BlockPointer lastBP = new BlockPointer(keyPointerList.get(keyPointerList.size()-1).get(1));
+        pfsList.get(lastBP.getPfsNumber())
+                .updateBlockPointer(lastBP.getBlockNumber(), currStartNEndPtr.get(0));
+      }
+      dataStartNEndPtrs.add(currStartNEndPtr);
+      blockleft -= assignedBlock;
+      blockCounter += assignedBlock;
+    }
+    return dataStartNEndPtrs.get(0).get(0);
   }
 
   // todo: updateDataBlockPointer
