@@ -41,15 +41,41 @@ public final class BtreeTest {
         Scanner scanner = new Scanner(System.in); // Create a Scanner object
         Btree tree = new Btree(); // Initialize your B-tree here
 
-        // TODO: Input your array here
-        int[] values = new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45};
+
+//        int[] values = new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45};
+        KeyPointer[] keyPointers = new KeyPointer [] {
+                new KeyPointer(29, "0000001"),
+                new KeyPointer(11, "0000002"),
+                new KeyPointer(44, "0000003"),
+                new KeyPointer(99, "0000004"),
+                new KeyPointer(46, "0000005"),
+                new KeyPointer(49, "0000006"),
+                new KeyPointer(27, "0000007"),
+                new KeyPointer(76, "0000008"),
+                new KeyPointer(91, "0000009"),
+                new KeyPointer(30, "0000010"),
+                new KeyPointer(100, "0000011"),
+                new KeyPointer(47, "0000012"),
+                new KeyPointer(34, "0000013"),
+                new KeyPointer(53, "0000014"),
+                new KeyPointer(9, "0000015"),
+                new KeyPointer(45, "0000016")
+
+        };
+
 
         System.out.println("Insert Values...");
-        for(int v : values) {
-          tree.Insert(v);
-          // Uncomment when you want to see the step-by-step insert..
-          // tree.DisplayEntileBTree();
+        for(KeyPointer kp : keyPointers) {
+            tree.Insert(kp.getKey());
+            // Uncomment when you want to see the step-by-step insert..
+            // tree.DisplayEntileBTree();
         }
+//        System.out.println("Insert Values...");
+//        for(int v : values) {
+//          tree.Insert(v);
+//          // Uncomment when you want to see the step-by-step insert..
+//          // tree.DisplayEntileBTree();
+//        }
         tree.DisplayEntileBTree();
 
         boolean running = true;

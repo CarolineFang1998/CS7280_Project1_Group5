@@ -29,6 +29,10 @@ public class KeyPointer {
     this.key = Integer.parseInt(keyPointerStr.substring(0, 8));
     this.pointer = keyPointerStr.substring(8, 15);
   }
+  public KeyPointer() {
+    this.key = -1;
+    this.pointer = "0000000"; // Assuming 7 '0's as a placeholder
+  }
 
   // Getter for the key
   public int getKey() {
