@@ -52,7 +52,6 @@ public class DB {
     //    block
     PFS pfs = new PFS(this, 0);
     pfsList.add(pfs);
-    pfsList.get(0).updateSuperBlock();
   }
 
 
@@ -181,21 +180,29 @@ public class DB {
    * @return A string representing the starting pointer of the stored data blocks.
    */
   public void storeBlocksInPFS(List<char[]> blocks, String fileName, int blocksSize) {
-    String dataStartPtr =  storeDataInPFSs(blocks, blocksSize);
+    List<List<String>> keyPointerList = new ArrayList<>();
+
+    // add index block
+    // TODO: function1: generate a index list char[]
+    // TODO: function2: see how many space we need and generate a List<Empty Block Lists String> and
+    //  replace all the pointer to corresponding String
+    String dataStartPtr =  storeDataInPFSs(blocks, blocksSize, keyPointerList);
+
+//    System.out.println("keyPointerList");
+//    for(int i=0; i<keyPointerList.size(); i++) {
+//      System.out.println(keyPointerList.get(i).get(0) + " , " + keyPointerList.get(i).get(1));
+//    }
 
     // todo: implement the fcb metadata class
     // FCB name: 20 char, time: 14 char (sample:  "15/SEP/23:25PM")
     // number of blocks 10 int.  data start block(7 char): default: 9999999,
     // index start block(7 char): default: 9999999,
 
-    // add index block
-    // TODO: function1: generate a index list char[]
-    // TODO: function2: see how many space we need and generate a List<Empty Block Lists String> and
-    //  replace all the pointer to corresponding String
 
     // todo: hard coded, change it
     pfsList.get(0).updateFCBMetadeta(fileName, LocalDateTime.now(), blocksSize,
             dataStartPtr, "9999999");
+
     this.numOfFCBFiles++;
     pfsList.get(0).updateSuperBlock();
   }
@@ -210,14 +217,13 @@ public class DB {
    * @return A String representing the starting pointer of the data within the PFS structure, which can be used
    *         to locate the data for future retrieval or modification.
    */
-  public String storeDataInPFSs(List<char[]> blocks, int blocksSize) {
+  public String storeDataInPFSs(List<char[]> blocks, int blocksSize, List<List<String>> keyPointerList) {
     // start and end pointers
     // List<{startPointerString, endPointerString}>
     List<List<String>> dataStartNEndPtrs = new ArrayList<>();
 
     // List of keyValues
     // List<{key:dataBlockPointer}>
-    List<List<String>> keyPointerList = new ArrayList<>();
     int blockleft = blocksSize; // counter for data block needs to insert
     int blockCounter = 0; // counter for data block needs to insert
 

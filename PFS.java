@@ -397,9 +397,6 @@ public class PFS {
     char[] metadeta = generateFCBMetadata(FCBName, time, size, dataBlockStart, indexStartPointer);
     System.arraycopy(metadeta, 0, this.content[5], 0, metadeta.length);
 
-    // update super block
-    updateSuperBlock();
-
     // write the current char array to .dbfile
     try {
       writeCharArrayToFile();

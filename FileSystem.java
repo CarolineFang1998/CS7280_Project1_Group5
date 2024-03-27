@@ -57,20 +57,52 @@ public class FileSystem {
 
     // find all the unique database
     Set<String> uniqueDb0Files = fileSystem.findUniqueDb0Files();
-    System.out.println("Unique .db0 files in the current directory:");
+    System.out.println("Database in the current directory:");
     for (String fileName : uniqueDb0Files) {
       System.out.println(fileName);
     }
+    System.out.println("...........................................");
 
 
     System.out.println("NoSQL CLI started. Type 'quit' to exit.");
     while (true) {
       System.out.print("NoSQL> ");
+      if(currentDatabase != null) {
+        System.out.print( currentDatabase.getName() +"> ");
+      }
       String input = reader.readLine().trim();
       String[] commandParts = input.split(" ", 3); // Split the command and arguments
       String command = commandParts[0];
 
-      if ("quit".equalsIgnoreCase(command)) {
+
+      if ("kill".equalsIgnoreCase(command)) {
+        if (commandParts.length > 1) {
+          String dbNameToKill = commandParts[1];
+          // Make sure database name is valid
+          if (uniqueDb0Files.contains(dbNameToKill)) {
+
+            if (currentDatabase != null && currentDatabase.getName().equals(dbNameToKill)) {
+              currentDatabase = null; // Reset current database if it's killed
+            }
+
+            // Delete files
+              File currentDir = new File(".");
+              FilenameFilter filter = (dir, name) -> name.startsWith(dbNameToKill);
+              File[] filesToKill = currentDir.listFiles(filter);
+              for (File file : filesToKill) {
+                if (!file.delete()) {
+                  System.out.println("Failed to delete file: " + file.getName());
+                } else {
+                  System.out.println("Deleted file: " + file.getName());
+                }
+              }
+          } else {
+            System.out.println("No matching db for 'kill' command.");
+          }
+        } else {
+          System.out.println("Missing database name for 'kill' command.");
+        }
+      } else if ("quit".equalsIgnoreCase(command)) {
         System.out.println("Exiting NoSQL CLI...");
         break;
       } else if ("open".equalsIgnoreCase(command)) {
@@ -79,7 +111,7 @@ public class FileSystem {
           //check if database exist
           // if the database does not exist: create a new database
           if (uniqueDb0Files.size()==0 || !uniqueDb0Files.contains(databaseName)) {
-            System.out.println("if the database does not exist: create a new database");
+            System.out.println("Database does not exist: creating a new database...");
             // create a new database.db0-> input (string name, block size)
             currentDatabase = new DB(databaseName, BLOCK_SIZE, false);
             uniqueDb0Files.add(databaseName);
@@ -139,17 +171,6 @@ public class FileSystem {
             // todo: implement find
           } else {
             System.out.println("Missing key for 'find' command.");
-          }
-
-        } else if ("kill".equalsIgnoreCase(command)) {
-          if (commandParts.length > 1) {
-            // todo: implement kill
-            if (commandParts[1].equals(currentDatabase)) {
-              currentDatabase = null; // Reset current database if it's killed
-            }
-
-          } else {
-            System.out.println("Missing database name for 'kill' command.");
           }
 
         } else {
