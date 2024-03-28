@@ -19,6 +19,14 @@ public class KeyPointer {
     this.keyPointerStr = keyStr + pointer;
   }
 
+  // dummy constructor
+  public KeyPointer() {
+    this.key = -1;
+    this.pointer = "9999999";
+    String keyStr = String.format("%07d", key);
+    this.keyPointerStr = keyStr + pointer;
+  }
+
   // Constructor using a 15 character string
   public KeyPointer(String keyPointerStr) {
     if (keyPointerStr == null || keyPointerStr.length() != 15) {
@@ -43,6 +51,35 @@ public class KeyPointer {
   public String getKeyPointerStr(){
     return keyPointerStr;
   }
+
+  public void setKey(Integer key) {
+    if (key == null) {
+      throw new IllegalArgumentException("Key cannot be null");
+    }
+    this.key = key;
+    // Update keyPointerStr to reflect the new key value
+    updateKeyPointerStr();
+  }
+
+  public void setPointer(String pointer) {
+    if (pointer == null || pointer.length() != 7) {
+      throw new IllegalArgumentException("Pointer must be exactly 7 digits long");
+    }
+    this.pointer = pointer;
+    // Update keyPointerStr to reflect the new pointer value
+    updateKeyPointerStr();
+  }
+
+
+  /**
+   * Updates the keyPointerStr based on the current key and pointer values.
+   * This method ensures that keyPointerStr is always in sync with key and pointer.
+   */
+  private void updateKeyPointerStr() {
+    String keyStr = String.format("%07d", this.key);
+    this.keyPointerStr = keyStr + this.pointer;
+  }
+
 
   // Override toString() for easy printing
   @Override
