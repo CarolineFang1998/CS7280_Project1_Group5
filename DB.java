@@ -1,6 +1,4 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -18,6 +16,8 @@ public class DB {
   private int numOfPFSFiles; // Number of PFC files, default value 1
   private List<PFS> pfsList; // List of PFS instances associated with this database.
 //  private List<FCB> fcbList;
+  private boolean isExisting; // Indicates whether the database is existing or new.
+  private String directoryPath; // The directory where this database's files are stored.
 
   /**
    * Constructor for the DB class. Initializes a new database or loads an existing one.
@@ -30,6 +30,9 @@ public class DB {
     System.out.println("creating DB "  + name);
     this.name = name;
     this.blockSize = blockSize;
+    this.isExisting = isExisting;
+    //The directory where this database's files are stored.
+    this.directoryPath = "./" + name;
     this.pfsList = new ArrayList<>();
 //    this.fcbList = new ArrayList<>();
     if(!isLoad) {
@@ -38,6 +41,7 @@ public class DB {
       // todo, load the previous pfs files
       // todo: load the fcb lists
     }
+
   }
 
   /**
@@ -334,5 +338,28 @@ public class DB {
   }
 
   // Additional methods related to DB operations can be added here
+  // list all files in the current database
+  public void listPFSFiles() {
+    this.directoryPath = directoryPath;
+    System.out.println("Listing contents of " + directoryPath + ":");
+    File directory = new File(this.directoryPath);
+//    System.out.println(this.directoryPath);
+
+    FilenameFilter filter = (dir, name) -> name.matches("\\.db\\d+"); // Regex to match .db files with sequence numbers
+
+    File[] files = directory.listFiles(filter);
+    System.out.println(files.length);
+    if (files != null) {
+      for (File file : files) {
+
+          System.out.println(file.getName());
+
+      }
+    } else {
+      System.out.println("The directory is empty.");
+  }
 }
+}
+
+
 

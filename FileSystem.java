@@ -166,6 +166,13 @@ public class FileSystem {
 
         } else if ("dir".equalsIgnoreCase(command)) {
 //          // todo: implement list all the file
+
+            currentDatabase.listPFSFiles(); // Call the method to list all PFS files
+
+
+
+
+
         } else if ("find".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
             // todo: implement find
