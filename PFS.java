@@ -328,10 +328,12 @@ public class PFS {
   // TODO: check if this is correct
   public int calculateBlocksLeft() {
     int blocksLeft = 0;
-
+    int counter = 1000;
     // Iterate over each character in the bitmap
-    for (int line = 0; line < 3; line++) { // Assuming the bitmap is in the first three lines
+    for (int line = 0; line < 4; line++) { // Assuming the bitmap is in the first four lines
       for (int i = 0; i < 256; i++) {
+        if(counter <= 0) return blocksLeft;
+        counter--;
         char hexChar = this.content[line][i];
         int value = Character.digit(hexChar, 16);
 
@@ -343,6 +345,7 @@ public class PFS {
         }
       }
     }
+
     return blocksLeft;
   }
 

@@ -221,9 +221,9 @@ public class DB {
     Btree btree = new Btree();
 
     for(KeyPointer currKeyPtr:keyPointerList) {
-      System.out.println(currKeyPtr.getKey() + " " + currKeyPtr.getKeyPointerStr());
+//      System.out.println(currKeyPtr.getKey() + " " + currKeyPtr.getKeyPointerStr());
       btree.Insert(currKeyPtr);
-      btree.DisplayEntileBTree();
+//      btree.DisplayEntileBTree();
     }
     return bTree;
   }
@@ -260,6 +260,9 @@ public class DB {
                 .addData(new ArrayList<>(blocks.subList(blockCounter, blockCounter + assignedBlock)),
                         keyPointerList);
 
+        System.out.println("Inserted " + assignedBlock +" to .db" + pfsList.get(i).getSequenceNumber());
+        System.out.println("Blocks left " + pfsList.get(i).calculateBlocksLeft());
+
         // if already inserted in another PFS file,
         if (dataStartNEndPtrs.size() > 0) {
           // update the last pfs end block pointer to the next pfs begin pointer
@@ -288,6 +291,10 @@ public class DB {
       // add blocks to current pfs file
       List<String> currStartNEndPtr = pfs.addData(new ArrayList<>(blocks.subList(blockCounter,
               blockCounter + assignedBlock)), keyPointerList);
+
+      System.out.println("Inserted " + assignedBlock +" to .db" + pfs.getSequenceNumber());
+      System.out.println("Blocks left " + pfs.calculateBlocksLeft());
+
 
       // if already inserted in another PFS file,
       // update the last pfs end block pointer to the next pfs begin pointer

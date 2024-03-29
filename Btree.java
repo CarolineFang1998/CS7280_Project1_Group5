@@ -59,7 +59,7 @@ final class Btree {
     int result = nodeInsert(value, root);
     if (result == -1) {
         cntValues++; // Value successfully inserted, increment the count of values
-        System.out.println("Insertion complete: " + value + " has been added.");
+//        System.out.println("Insertion complete: " + value + " has been added.");
     } else if (result == -2) {
         System.out.println("Insertion failed: " + value + " already exists.");
     }
