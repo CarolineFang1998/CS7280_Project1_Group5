@@ -180,18 +180,25 @@ public class DB {
    * @return A string representing the starting pointer of the stored data blocks.
    */
   public void storeBlocksInPFS(List<char[]> blocks, String fileName, int blocksSize) {
-    List<List<String>> keyPointerList = new ArrayList<>();
+    List<KeyPointer> keyPointerList = new ArrayList<>();
 
-    // add index block
-    // TODO: function1: generate a index list char[]
-    // TODO: function2: see how many space we need and generate a List<Empty Block Lists String> and
-    //  replace all the pointer to corresponding String
+
     String dataStartPtr =  storeDataInPFSs(blocks, blocksSize, keyPointerList);
 
-//    System.out.println("keyPointerList");
-//    for(int i=0; i<keyPointerList.size(); i++) {
-//      System.out.println(keyPointerList.get(i).get(0) + " , " + keyPointerList.get(i).get(1));
+//    for(KeyPointer currKeyPtr:keyPointerList) {
+//      System.out.println(currKeyPtr.getKey() + " " + currKeyPtr.getKeyPointerStr());
 //    }
+
+    // add index block
+    int indexBlockSize = 0;
+    // TODO: function1: generate a index list char[]
+     List<char[]> generatedTreeNodes =  generatedBTree(keyPointerList);
+
+    // TODO: function2: see how many space we need and generate a List<Empty Block Lists String> and
+    //  replace all the pointer to corresponding String
+    // String indexStartPtr = storeIndexInPFSs
+
+
 
     // todo: implement the fcb metadata class
     // FCB name: 20 char, time: 14 char (sample:  "15/SEP/23:25PM")
@@ -207,6 +214,20 @@ public class DB {
     pfsList.get(0).updateSuperBlock();
   }
 
+
+  public List<char[]> generatedBTree(List<KeyPointer> keyPointerList){
+    List<char[]> bTree = new ArrayList<>();
+
+    Btree btree = new Btree();
+
+    for(KeyPointer currKeyPtr:keyPointerList) {
+      System.out.println(currKeyPtr.getKey() + " " + currKeyPtr.getKeyPointerStr());
+      btree.Insert(currKeyPtr);
+      btree.DisplayEntileBTree();
+    }
+    return bTree;
+  }
+
   /**
    * Stores data blocks across one or more PFS files, managing the distribution of blocks based on available space.
    * This method allocates blocks to existing PFS files and creates new PFS files if needed to accommodate all blocks.
@@ -217,7 +238,7 @@ public class DB {
    * @return A String representing the starting pointer of the data within the PFS structure, which can be used
    *         to locate the data for future retrieval or modification.
    */
-  public String storeDataInPFSs(List<char[]> blocks, int blocksSize, List<List<String>> keyPointerList) {
+  public String storeDataInPFSs(List<char[]> blocks, int blocksSize, List<KeyPointer> keyPointerList) {
     // start and end pointers
     // List<{startPointerString, endPointerString}>
     List<List<String>> dataStartNEndPtrs = new ArrayList<>();

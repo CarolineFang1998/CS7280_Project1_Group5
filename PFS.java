@@ -85,7 +85,7 @@ public class PFS {
    * {start pointer,end pointer}  pointer is a block pointer with 7 char.
    *
    */
-  public List<String> addData(List<char[]> blocks, List<List<String>> keyPointerList) {
+  public List<String> addData(List<char[]> blocks, List<KeyPointer> keyPointerList) {
     this.emptyBlock = findNextFreeBlock();
 
     BlockPointer startBp = new BlockPointer(this.sequenceNumber, this.emptyBlock);
@@ -152,13 +152,12 @@ public class PFS {
    *                       {"1", "1,Toy Story (1995),Adventure|Animation|C"}
    * @param blockNum The block number where the data is stored. From 0 to 3999
    */
-  void updateKeyPointerList(char[] block, List<List<String>> keyPointerList, int blockNum) {
+  void updateKeyPointerList(char[] block, List<KeyPointer> keyPointerList, int blockNum) {
     // 6 records in one data block, each 40 characters long
     int recordLength = 40;
     for (int i = 0; i < 6; i++) {
       // Calculate the start and end indices for the current record
       int start = i * recordLength;
-      int end = start + recordLength;
 
       // Extract the current record from the block
       String record = new String(block, start, Math.min(recordLength, block.length - start));
@@ -177,13 +176,11 @@ public class PFS {
       DataBlockPointer dbPointer = new DataBlockPointer(this.sequenceNumber, blockNum, i);
 
       // Create the current record list containing the key and DataBlockPointer string
-      List<String> currRecord = new ArrayList<>();
-      currRecord.add(key);
-      currRecord.add(dbPointer.getPtrString());
-//      System.out.println(key + " " + dbPointer.getPtrString());
+      KeyPointer currKeyPtr = new KeyPointer(Integer.valueOf(key), dbPointer.getPtrString());
+//      System.out.println(currKeyPtr.getKey() + " " + currKeyPtr.getKeyPointerStr());
 
       // Add the current record to the keyPointerList
-      keyPointerList.add(currRecord);
+      keyPointerList.add(currKeyPtr);
     }
   }
 
