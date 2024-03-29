@@ -353,8 +353,12 @@ public class PFS {
    */
   public int findNextFreeBlock() {
     // Loop through each row and column of the content array
+    int counter = 1000;
     for (int row = 0; row < 4; row++) {
       for (int col = 0; col < 256; col++) {
+        // If no free block is found, return -1
+        if(counter == 0) return -1;
+        counter--;
         char hexChar = this.content[row][col];
 
         // Convert the hexadecimal character to a binary string
@@ -375,7 +379,7 @@ public class PFS {
         }
       }
     }
-    // If no free block is found, return -1 or an appropriate error value
+    // If no free block is found, return -1
     return -1;
   }
 

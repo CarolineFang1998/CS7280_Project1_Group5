@@ -354,6 +354,4 @@ public class DB {
     this.numOfPFSFiles = numOfPFSFiles;
   }
 
-  // Additional methods related to DB operations can be added here
 }
-
