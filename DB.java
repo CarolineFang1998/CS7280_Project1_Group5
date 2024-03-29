@@ -191,11 +191,13 @@ public class DB {
 
     // add index block
     int indexBlockSize = 0;
-    // TODO: function1: generate a index list char[]
-     List<char[]> generatedTreeNodes =  generatedBTree(keyPointerList);
+    // TODO: function1: generate a b tree which inserted keyPointers
+     Btree btree =  generateBTree(keyPointerList);
+
 
     // TODO: function2: see how many space we need and generate a List<Empty Block Lists String> and
     //  replace all the pointer to corresponding String
+    List<String> emptyBlocks = findEmptyBlocks(btree.getCntNodes());
     // String indexStartPtr = storeIndexInPFSs
 
 
@@ -214,10 +216,75 @@ public class DB {
     pfsList.get(0).updateSuperBlock();
   }
 
+  // get the btree size and find empty blocks in database
+  public List<String> findEmptyBlocks(int btreeSize) {
+    System.out.println("findEmptyBlocks btreeSize " + btreeSize);
+    List<String> emptyBlocks = new ArrayList<>(); // list of BlockPointer String
 
-  public List<char[]> generatedBTree(List<KeyPointer> keyPointerList){
-    List<char[]> bTree = new ArrayList<>();
+    int blockleft = btreeSize; // counter for data block needs to insert
 
+    // try to put data in existing PFS file
+    for(int i = 0; i < this.pfsList.size(); i++) {
+      if (blockleft > 0 && pfsList.get(i).getBlockLeft() > 0) {
+        // calculate how many blocks should I put in current file i
+        int assignedBlock = Math.min(blockleft, pfsList.get(i).getBlockLeft());
+
+        // find empty blocks and update emptyBlocks List with empty BlockPointer String
+        pfsList.get(i).findEmptyBlocks(assignedBlock, emptyBlocks);
+
+//        for(String blockStr: emptyBlocks){
+//          System.out.println(blockStr);
+//        }
+
+        System.out.println("Inserted " + assignedBlock +" to .db" + pfsList.get(i).getSequenceNumber());
+
+        blockleft -= assignedBlock;
+
+        try {
+          pfsList.get(i).writeCharArrayToFile();
+          System.out.println("File written successfully.");
+        } catch (IOException e) {
+          System.err.println("An error occurred while writing the file: " + e.getMessage());
+        }
+      }
+    }
+
+    // If the current file are full, create new file and try to put blocks in it
+    while(blockleft > 0) {
+      // create a new PFS file
+      PFS pfs = new PFS(this, this.numOfPFSFiles);
+      pfsList.add(pfs);
+      pfsList.get(0).updateSuperBlockNumOfPFSFiles(this.numOfPFSFiles);
+
+      // calculate how many blocks should I put in current file i
+      int assignedBlock = Math.min(blockleft, pfs.getBlockLeft());
+
+      // find empty blocks and update emptyBlocks List with empty BlockPointer String
+      pfs.findEmptyBlocks(assignedBlock, emptyBlocks);
+
+      System.out.println(emptyBlocks.get(emptyBlocks.size()-1));
+
+      System.out.println("Inserted " + assignedBlock +" to .db" + pfs.getSequenceNumber());
+
+      // write the current char array to .dbfile
+      try {
+        pfs.writeCharArrayToFile();
+        System.out.println("File written successfully.");
+      } catch (IOException e) {
+        System.err.println("An error occurred while writing the file: " + e.getMessage());
+      }
+
+      // update counters
+      blockleft -= assignedBlock;
+    }
+
+
+    return emptyBlocks;
+  }
+
+
+  // inserted all the keys and genarate a B-tree
+  public Btree generateBTree(List<KeyPointer> keyPointerList){
     Btree btree = new Btree();
 
     for(KeyPointer currKeyPtr:keyPointerList) {
@@ -225,7 +292,7 @@ public class DB {
       btree.Insert(currKeyPtr);
 //      btree.DisplayEntileBTree();
     }
-    return bTree;
+    return btree;
   }
 
   /**
@@ -261,7 +328,6 @@ public class DB {
                         keyPointerList);
 
         System.out.println("Inserted " + assignedBlock +" to .db" + pfsList.get(i).getSequenceNumber());
-        System.out.println("Blocks left " + pfsList.get(i).calculateBlocksLeft());
 
         // if already inserted in another PFS file,
         if (dataStartNEndPtrs.size() > 0) {
@@ -293,8 +359,6 @@ public class DB {
               blockCounter + assignedBlock)), keyPointerList);
 
       System.out.println("Inserted " + assignedBlock +" to .db" + pfs.getSequenceNumber());
-      System.out.println("Blocks left " + pfs.calculateBlocksLeft());
-
 
       // if already inserted in another PFS file,
       // update the last pfs end block pointer to the next pfs begin pointer
