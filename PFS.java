@@ -600,43 +600,7 @@ public class PFS {
     return blockLeft;
   }
 
-  // load the existing PFS file content
 
-//  /**
-//   * Loads the existing content of a PFS file from disk and returns it as a 2D char array.
-//   *
-//   * @return char[][] The content of the existing PFS file.
-//   */
-//  private char[][] loadExistingPFS() {
-//
-//
-//    // Load the content of the file into the 2D char array
-//    try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
-//      int rowIndex = 0; // Row index for content array
-//      int colIndex = 0; // Column index for content array
-//
-//      int character = reader.read(); // Read the first character
-//      while (character != -1 && rowIndex < 4000) { // Check for end of file and array bounds
-//        // Cast the integer character back to char and assign it to the content array
-//        this.content[rowIndex][colIndex] = (char) character;
-//
-//        colIndex++; // Move to the next column
-//        if (colIndex >= 256) { // Check if the end of the row is reached
-//          colIndex = 0; // Reset column index for the new row
-//          rowIndex++; // Move to the next row
-//        }
-//
-//        character = reader.read(); // Read the next character
-//      }
-//    } catch (IOException e) {
-//      System.err.println("An error occurred while loading PFS file: " + e.getMessage());
-//      throw new RuntimeException("Failed to load PFS file.");
-//
-//
-//    }
-//    return this.content;
-//  }
-//}
 
   /**
    * Load the content of the PFS file into the 2D char array, considering the special structure of .db0.
