@@ -17,7 +17,7 @@ public class DB {
   private int numOfFCBFiles; // Number of FCB files, default value 0
   private int numOfPFSFiles; // Number of PFC files, default value 1
   private List<PFS> pfsList; // List of PFS instances associated with this database.
-//  private List<FCB> fcbList;
+  private List<FCB> fcbList; // List of FCB instances associated with this database.
 
   /**
    * Constructor for the DB class. Initializes a new database or loads an existing one.
@@ -31,7 +31,7 @@ public class DB {
     this.name = name;
     this.blockSize = blockSize;
     this.pfsList = new ArrayList<>();
-//    this.fcbList = new ArrayList<>();
+    this.fcbList = new ArrayList<>();
     if (!isLoad) {
       init();
     } else {
@@ -39,6 +39,10 @@ public class DB {
       for (PFS file : pfsList) {
         file.loadExistingPFS();
         // todo: load the fcb lists
+        for (FCB fcb : fcbList) {
+
+        }
+
       }
     }
   }
