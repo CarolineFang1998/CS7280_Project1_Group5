@@ -50,6 +50,10 @@ final class Btree {
     return this.cntNodes;
   }
 
+  public int getRoot() {
+    return this.root;
+  }
+
   /*
    * Performs a lookup for a value in the B-tree.
    * @param value The value to search for.

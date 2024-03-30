@@ -576,6 +576,20 @@ public class PFS {
     this.content[row][col] = Integer.toHexString(newValue).toUpperCase().charAt(0);
   }
 
+  public void writeContent(int blockNum, char[] newBlockContent) {
+    if(blockNum < 0 || blockNum >= 4000) {
+      System.out.println("Invalid block number, please input from 0 to 3999");
+      return;
+    }
+
+    if(newBlockContent.length != 256) {
+      System.out.println("Invalid block content, please input char length 256");
+      return;
+    }
+
+    this.content[blockNum] = newBlockContent;
+  }
+
 
 
   // TODO: load Existings PFS, return the char[][]

@@ -171,8 +171,8 @@ public class DB {
   }
 
   /**
-   * Stores data blocks into PFS files, managing block allocation and updating superblock and FCB
-   * metadata as necessary.
+   * Stores data blocks and index block into PFS files,  managing block allocation and updating
+   * superblock and FCB metadata as necessary.
    *
    * @param blocks A list of data blocks to store.
    * @param fileName The name of the file associated with these data blocks.
@@ -182,38 +182,97 @@ public class DB {
   public void storeBlocksInPFS(List<char[]> blocks, String fileName, int blocksSize) {
     List<KeyPointer> keyPointerList = new ArrayList<>();
 
-
     String dataStartPtr =  storeDataInPFSs(blocks, blocksSize, keyPointerList);
-
-//    for(KeyPointer currKeyPtr:keyPointerList) {
-//      System.out.println(currKeyPtr.getKey() + " " + currKeyPtr.getKeyPointerStr());
-//    }
 
     // add index block
     int indexBlockSize = 0;
-    // TODO: function1: generate a b tree which inserted keyPointers
+    // Generate a b-tree which inserted all the keyPointers
      Btree btree =  generateBTree(keyPointerList);
+//     btree.DisplayEntileBTree();
 
-
-    // TODO: function2: see how many space we need and generate a List<Empty Block Lists String> and
-    //  replace all the pointer to corresponding String
+    // Find how many space we need and generate a List<Empty Block Lists String>
     List<String> emptyBlocks = findEmptyBlocks(btree.getCntNodes());
-    // String indexStartPtr = storeIndexInPFSs
 
 
+//    System.out.println("....................");
+//    System.out.println("emptyBlocks:");
+//    for(String s : emptyBlocks) {
+//      System.out.println(s);
+//    }
+//    System.out.println("....................");
+
+    // Put the index block into corresponding place
+    // Replace all the pointer to corresponding String
+    String indexRootPtr = storeIndexToEmptyBlocks(emptyBlocks, btree);
 
     // todo: implement the fcb metadata class
     // FCB name: 20 char, time: 14 char (sample:  "15/SEP/23:25PM")
     // number of blocks 10 int.  data start block(7 char): default: 9999999,
     // index start block(7 char): default: 9999999,
-
-
-    // todo: hard coded, change it
-    pfsList.get(0).updateFCBMetadeta(fileName, LocalDateTime.now(), blocksSize,
-            dataStartPtr, "9999999");
+    pfsList.get(0).updateFCBMetadeta(fileName, LocalDateTime.now(),
+            blocksSize + btree.getCntNodes(), dataStartPtr, indexRootPtr);
+    System.out.println("empty space" + pfsList.get(0).getBlockLeft());
+    System.out.println("calculate empty space" + pfsList.get(0).calculateBlocksLeft());
 
     this.numOfFCBFiles++;
     pfsList.get(0).updateSuperBlock();
+  }
+
+  // stores b-tree nodes into empty blocks and write the corresponding files
+  public String storeIndexToEmptyBlocks(List<String> emptyBlocks, Btree btree) {
+    // handling root as return
+    String rootBlockPointer = emptyBlocks.get(btree.getRoot());
+    Node[] nodes = btree.getNodes();
+
+    for(int i=0; i<emptyBlocks.size(); i++) {
+//      System.out.println("block: " + i);
+      // generate a index block string
+      int j=0;
+      String temp = "";
+      for(; j<nodes[i].size; j++){
+        int childPointer = nodes[i].children[j];
+
+        if(childPointer == -1 ) {
+          temp += "9999999";
+//          System.out.print("9999999");
+        } else {
+          temp += emptyBlocks.get(childPointer);
+//          System.out.print(emptyBlocks.get(childPointer));
+        }
+//        System.out.print(" (" + nodes[i].values[j].getKeyPointerStr() + ") ");
+        temp += nodes[i].values[j].getKeyPointerStr();
+      }
+
+      int laseChildPointer = nodes[i].children[j];
+      if(laseChildPointer == -1 ) {
+        temp += "9999999";
+//        System.out.print(" 9999999 ");
+      } else {
+        temp += emptyBlocks.get(laseChildPointer);
+//        System.out.print(" " + emptyBlocks.get(laseChildPointer));
+      }
+
+//      System.out.println();
+      // write this block in content[][]
+      BlockPointer bp = new BlockPointer(emptyBlocks.get(i));
+      char[] tempCharArray = new char[this.blockSize];
+      for (int k = 0; k < temp.toCharArray().length; k++) {
+        tempCharArray[k] = temp.charAt(k);
+      }
+//      System.out.println("temp " + String.valueOf(tempCharArray));
+      this.pfsList.get(bp.getPfsNumber()).writeContent(bp.getBlockNumber(), tempCharArray);
+    }
+
+    // write into .db file
+    for(int i=0; i<pfsList.size(); i++) {
+      try {
+        pfsList.get(i).writeCharArrayToFile();
+        System.out.println("File written successfully.");
+      } catch (IOException e) {
+        System.err.println("An error occurred while writing the file: " + e.getMessage());
+      }
+    }
+    return rootBlockPointer;
   }
 
   // get the btree size and find empty blocks in database
@@ -236,7 +295,7 @@ public class DB {
 //          System.out.println(blockStr);
 //        }
 
-        System.out.println("Inserted " + assignedBlock +" to .db" + pfsList.get(i).getSequenceNumber());
+        System.out.println("Inserted index block " + assignedBlock +" to .db" + pfsList.get(i).getSequenceNumber());
 
         blockleft -= assignedBlock;
 
@@ -327,7 +386,7 @@ public class DB {
                 .addData(new ArrayList<>(blocks.subList(blockCounter, blockCounter + assignedBlock)),
                         keyPointerList);
 
-        System.out.println("Inserted " + assignedBlock +" to .db" + pfsList.get(i).getSequenceNumber());
+        System.out.println("Inserted data node " + assignedBlock +" to .db" + pfsList.get(i).getSequenceNumber());
 
         // if already inserted in another PFS file,
         if (dataStartNEndPtrs.size() > 0) {
