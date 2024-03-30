@@ -27,16 +27,19 @@ public class DB {
    * @param isLoad Indicates whether to load an existing database (true) or create a new one (false).
    */
   public DB(String name, int blockSize, boolean isLoad) {
-    System.out.println("creating DB "  + name);
+    System.out.println("creating DB " + name);
     this.name = name;
     this.blockSize = blockSize;
     this.pfsList = new ArrayList<>();
 //    this.fcbList = new ArrayList<>();
-    if(!isLoad) {
+    if (!isLoad) {
       init();
     } else {
       // todo, load the previous pfs files
-      // todo: load the fcb lists
+      for (PFS file : pfsList) {
+        file.loadExistingPFS();
+        // todo: load the fcb lists
+      }
     }
   }
 
@@ -360,5 +363,19 @@ public class DB {
   public void setNumOfPFSFiles(int numOfPFSFiles) {
     this.numOfPFSFiles = numOfPFSFiles;
   }
+
+  // show PFS'S fcb metadata
+  public void showPFSFCBMetadata() {
+        for(PFS pfs: pfsList) {
+        pfs.showFCBContent();
+        }
+  }
+  //show pfs this.content
+  public void showPFSContent() {
+    for(PFS pfs: pfsList) {
+      pfs.showContent();
+    }
+  }
+
 
 }

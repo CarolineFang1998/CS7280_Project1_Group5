@@ -165,8 +165,13 @@ public class FileSystem {
           }
 
         } else if ("dir".equalsIgnoreCase(command)) {
-//          // todo: implement list all the file
-        } else if ("find".equalsIgnoreCase(command)) {
+          currentDatabase.showPFSFCBMetadata();
+//
+        } else if ("show".equalsIgnoreCase(command)) {
+//          currentDatabase.showPFSFCBMetadata();
+          currentDatabase.showPFSContent();
+//
+        }else if ("find".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
             // todo: implement find
           } else {
