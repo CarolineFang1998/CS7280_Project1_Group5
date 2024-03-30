@@ -326,7 +326,6 @@ public class PFS {
    *
    * @return The number of free blocks left.
    */
-  // TODO: check if this is correct
   public int calculateBlocksLeft() {
     int blocksLeft = 0;
     int counter = 1000;
@@ -385,6 +384,19 @@ public class PFS {
     }
     // If no free block is found, return -1
     return -1;
+  }
+
+  public void findEmptyBlocks(int assignedBlock, List<String> emptyBlocks) {
+    this.emptyBlock = findNextFreeBlock(); // make sure emptyBlock variable is the latest
+    for(int i = 0; i < assignedBlock; i++) {
+      int curr_block = this.emptyBlock;
+      BlockPointer bp = new BlockPointer(this.sequenceNumber, curr_block);
+      emptyBlocks.add(bp.getPtrString());
+
+      // update BitMap status and mark curr_block full
+      updateBitMap(curr_block, true);
+      this.emptyBlock = findNextFreeBlock(); // make sure emptyBlock variable is the latest
+    }
   }
 
   /**
@@ -563,6 +575,20 @@ public class PFS {
     // 1000 (8) is for 1st block full, 0100 (4) is for 2nd block full
     int newValue = binary[0] * 8 + binary[1] * 4 + binary[2] * 2 + binary[3];
     this.content[row][col] = Integer.toHexString(newValue).toUpperCase().charAt(0);
+  }
+
+  public void writeContent(int blockNum, char[] newBlockContent) {
+    if(blockNum < 0 || blockNum >= 4000) {
+      System.out.println("Invalid block number, please input from 0 to 3999");
+      return;
+    }
+
+    if(newBlockContent.length != 256) {
+      System.out.println("Invalid block content, please input char length 256");
+      return;
+    }
+
+    this.content[blockNum] = newBlockContent;
   }
 
 

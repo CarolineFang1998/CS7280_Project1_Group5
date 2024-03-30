@@ -42,6 +42,18 @@ final class Btree {
 
   /*********** B tree functions for Public ******************/
 
+  public Node[] getNodes() {
+    return this.nodes;
+  }
+
+  public int getCntNodes() {
+    return this.cntNodes;
+  }
+
+  public int getRoot() {
+    return this.root;
+  }
+
   /*
    * Performs a lookup for a value in the B-tree.
    * @param value The value to search for.
