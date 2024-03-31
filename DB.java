@@ -39,9 +39,10 @@ public class DB {
       for (PFS file : pfsList) {
         file.loadExistingPFS();
         // todo: load the fcb lists
-        for (FCB fcb : fcbList) {
-
-        }
+//        for (FCB fcb : fcbList) {
+//          fcb.loadExistingFCB();
+//
+//        }
 
       }
     }
@@ -493,9 +494,7 @@ public class DB {
 
   // show PFS'S fcb metadata
   public void showPFSFCBMetadata() {
-        for(PFS pfs: pfsList) {
-        pfs.showFCBContent();
-        }
+        pfsList.get(0).showFCBContent();
   }
   //show pfs this.content
   public void showPFSContent() {

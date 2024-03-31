@@ -18,6 +18,7 @@ public class PFS {
   private int emptyBlock; // block # for next empty block
   private String fileName; // the file name for this PFS file
 
+
   /**
    * Constructor for creating a new PFS instance.
    * Initializes the content array, checks for the existence of the file, and prepares the bitmap.
@@ -411,8 +412,27 @@ public class PFS {
    */
   public void updateFCBMetadeta(String FCBName, LocalDateTime time, int size,
                                 String dataBlockStart, String indexStartPointer) {
-    char[] metadeta = generateFCBMetadata(FCBName, time, size, dataBlockStart, indexStartPointer);
-    System.arraycopy(metadeta, 0, this.content[5], 0, metadeta.length);
+    char[] metadata = generateFCBMetadata(FCBName, time, size, dataBlockStart, indexStartPointer);
+//    System.arraycopy(metadeta, 0, this.content[5], 0, metadeta.length);
+    int existingMetadataCount= this.db.getNumOfFCBFiles();
+    if (existingMetadataCount < 4) {
+      // There is space, append the new metadata
+      appendMetadataToBlock(this.content[5], metadata, existingMetadataCount);
+    } else {
+      // The block is full, find a new empty block and update the pointer in the current block
+      int newBlockIndex = findNextFreeBlock(); // Implement this to find an empty block
+      if (newBlockIndex != -1) {
+        // Update the pointer in the current block to the new block
+        updateBlockPointer(newBlockIndex, String.format("%10s", newBlockIndex));
+
+        // Store the new metadata in the new block
+        appendMetadataToBlock(this.content[newBlockIndex], metadata, 0);
+      } else {
+        System.err.println("No empty block available.");
+        return;
+      }
+    }
+
 
     // write the current char array to .dbfile
     try {
@@ -422,6 +442,47 @@ public class PFS {
       System.err.println("An error occurred while writing the file: " + e.getMessage());
     }
   }
+private void appendMetadataToBlock(char[] block, char[] metadata, int existingMetadataCount) {
+  final int METADATA_SIZE = 57; // Size of each metadata entry
+  final int MAX_ENTRIES = 4; // Maximum number of metadata entries per block
+  final int POINTER_SIZE = 10; // Size of the block pointer
+  final int BLOCK_SIZE = METADATA_SIZE * MAX_ENTRIES + POINTER_SIZE; // Total block size
+
+  // Calculate the starting position for the new metadata in the block
+  int startPosition = existingMetadataCount * METADATA_SIZE;
+
+  if (existingMetadataCount >= MAX_ENTRIES) {
+    System.err.println("Block is already full. Cannot append more metadata.");
+    return;
+  }
+
+  if (startPosition + METADATA_SIZE > BLOCK_SIZE - POINTER_SIZE) {
+    System.err.println("Insufficient space in the block for new metadata.");
+    return;
+  }
+
+  // Append the metadata to the block
+  for (int i = 0; i < metadata.length; i++) {
+    block[startPosition + i] = metadata[i];
+  }
+
+  if (existingMetadataCount + 1 == MAX_ENTRIES) {
+    // The block is now full after adding this metadata; find and write the next block pointer
+    int nextBlockIndex = findNextFreeBlock(); // Implement this method to find the index of the next empty block
+    if (nextBlockIndex != -1) {
+      // Assuming the pointer is stored as a fixed-size string representation of the block index
+      String pointerStr = String.format("%" + POINTER_SIZE + "s", nextBlockIndex);
+      char[] pointerCharArray = pointerStr.toCharArray();
+      System.arraycopy(pointerCharArray, 0, block, BLOCK_SIZE - POINTER_SIZE, POINTER_SIZE);
+    } else {
+      System.err.println("No empty block available to store the next pointer.");
+    }
+  }
+
+  // No need to explicitly write the block back if `block` is a reference to `this.content[5]`
+
+}
+
 
   /**
    * Generates and returns the metadata for an FCB as a char array. This metadata includes the FCB's name,
@@ -646,6 +707,12 @@ public class PFS {
       throw new RuntimeException("Failed to load PFS file.");
     }
   }
+  /*
+      * Loads the content of the PFS file into the 2D char array, considering the special structure of .db0.
+      * This method is used to handle the specific structure of the .db0 file, including the bitmap, superblock, and FCB.
+      * @param reader The BufferedReader object used to read the file.
+      * @return The 2D char array containing the loaded content.
+   */
   private char[][] loadDb0(BufferedReader reader) throws IOException {
     // Specific logic to handle .db0 file
     // This could involve processing the bitmap,  superblock and FCB specifically
@@ -659,6 +726,11 @@ public class PFS {
     readBlocks(reader);
     return content;
   }
+  /*
+    loads the content of the PFS file into the 2D char array, considering the general structure of .db1, .db2, etc.
+    @param reader The BufferedReader object used to read the file.
+    @return The 2D char array containing the loaded content.
+   */
   private char[][] loadDbN(BufferedReader reader) throws IOException {
     // General logic to handle files other than .db0
     // this could just involve loading the bitmap and then the rest of the blocks
@@ -668,10 +740,10 @@ public class PFS {
     readBlocks(reader);
     return content;
   }
-  // Placeholder methods for reading different sections of the PFS file
+
   /*
     * Reads the bitmap section of the PFS file.
-    * the bitmap is directly stored as hexadecimal characters.
+    * the bitmap is directly stored as hexadecimal characters in this.content array.
    */
   private void readBitmap(BufferedReader reader) throws IOException {
     for (int i = 0; i < 4; i++) {
@@ -799,9 +871,50 @@ public class PFS {
   }
 
   // printout this.content[5]
-    public void showFCBContent() {
-        System.out.println(this.content[5]);
+  public void showFCBContent() {
+    final int METADATA_SIZE = 57; // Size of each metadata entry
+    char[] block = this.content[5]; // Assuming this is your metadata block
+    StringBuilder builder = new StringBuilder();
+
+    // Iterate over each metadata entry
+    for (int i = 0; i < block.length; i += METADATA_SIZE) {
+      // Check for the presence of actual data to avoid printing empty or uninitialized space
+      boolean hasData = false;
+      for (int j = 0; j < METADATA_SIZE && (i + j) < block.length; j++) {
+        if (block[i + j] != '\0') { // Assuming '\0' marks the end or empty space
+          builder.append(block[i + j]);
+          hasData = true;
+        }
+      }
+
+      // If actual data was found, append a delimiter after the entry, except for the last one
+      if (hasData && (i + METADATA_SIZE) < block.length) {
+        builder.append("\n"); // Delimiter between entries
+      }
     }
+
+    System.out.println(builder.toString());
+  }
+
+
+//  public List<FCB> loadFCBsFromBlock(int blockNum) {
+//    List<FCB> fcbs = new ArrayList<>();
+//
+//    // Logic to read the specified block (e.g., the 6th block) and extract FCB data
+//    // This might involve reading from a file, decoding the block's content,
+//    // and creating FCB instances from that content
+//    String blockContent = readFCBs(reader); // Implement this method based on your storage
+//
+//    // Split the block content into individual FCB metadata entries
+//    // Assuming each FCB entry is separated by a newline or another delimiter
+//    String[] fcbEntries = blockContent.split("\n"); // Adjust delimiter as necessary
+//    for (String entry : fcbEntries) {
+//      FCB fcb = FCB.fromString(entry);
+//      fcbs.add(fcb);
+//    }
+//
+//    return fcbs;
+//  }
 
 }
 
