@@ -219,6 +219,9 @@ public class DB {
     // index start block(7 char): default: 9999999,
     pfsList.get(0).updateFCBMetadeta(fileName, LocalDateTime.now(),
             blocksSize + btree.getCntNodes(), dataStartPtr, indexRootPtr);
+    FCB newFCB = new FCB(fileName, LocalDateTime.now(), blocksSize + btree.getCntNodes(), dataStartPtr, indexRootPtr);
+    fcbList.add(newFCB);
+
     System.out.println("empty space" + pfsList.get(0).getBlockLeft());
     System.out.println("calculate empty space" + pfsList.get(0).calculateBlocksLeft());
 
@@ -494,7 +497,11 @@ public class DB {
 
   // show PFS'S fcb metadata
   public void showPFSFCBMetadata() {
-        pfsList.get(0).showFCBContent();
+//        pfsList.get(0).showFCBContent();
+    for(FCB fcb: fcbList) {
+
+      fcb.showContent();
+    }
   }
   //show pfs this.content
   public void showPFSContent() {
