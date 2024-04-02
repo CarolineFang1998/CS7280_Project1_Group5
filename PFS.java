@@ -1,4 +1,6 @@
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -998,6 +1000,33 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
 
     return records;
   }
+  // write the records to a CSV file
+    public void writeRecordsToCSV(String fileName, List<char[]>blocksData)
+            throws IOException {
+      String directoryPath = "download"; // The name of the directory to store the CSV files
+      try {
+        // Ensure the download directory exists
+        Files.createDirectories(Paths.get(directoryPath));
+
+        // Construct the full path for the new CSV file within the download directory
+        File file = new File(directoryPath, fileName);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+          for (char[] blockData : blocksData) {
+            List<String> records = extractRecordsFromBlock(blockData);
+            for (String record : records) {
+              writer.write(record);
+
+            }
+
+          }
+        }
+//        System.out.println("CSV file written successfully: " + file.getAbsolutePath());
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+
+    }
+
   // print out the records
   public void showRecords(List<String> records) {
     for (String record : records) {
@@ -1014,31 +1043,31 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
         }
     }
   // Assuming this method is also in the PFS class or a utility class
-  public void writeBlocksToCSV(String fcbName, List<char[]> blocks) throws IOException {
-    String newFileName = "reconstructed_" + fcbName; // New CSV file name
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(newFileName))) {
-      for (char[] block : blocks) {
-        String blockData = new String(block).trim(); // Convert to string and trim
-        writer.write(blockData);
-        writer.newLine(); // Assuming CSV data does not span multiple blocks
-      }
-    }
-  }
-  public void reconstructCSVFromFCB(String fcbName) {
-    FCB fcb = db.findFCBByName(fcbName);
-    if (fcb == null) {
-      System.out.println("FCB not found for name: " + fcbName);
-      return;
-    }
-
-    List<char[]> blocks = getBlocksByFCB(fcb);
-    try {
-      writeBlocksToCSV(fcbName, blocks);
-      System.out.println("CSV file reconstructed: " + fcbName);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
+//  public void writeBlocksToCSV(String fcbName, List<char[]> blocks) throws IOException {
+//    String newFileName = "reconstructed_" + fcbName; // New CSV file name
+//    try (BufferedWriter writer = new BufferedWriter(new FileWriter(newFileName))) {
+//      for (char[] block : blocks) {
+//        String blockData = new String(block).trim(); // Convert to string and trim
+//        writer.write(blockData);
+//        writer.newLine(); // Assuming CSV data does not span multiple blocks
+//      }
+//    }
+//  }
+//  public void reconstructCSVFromFCB(String fcbName) {
+//    FCB fcb = db.findFCBByName(fcbName);
+//    if (fcb == null) {
+//      System.out.println("FCB not found for name: " + fcbName);
+//      return;
+//    }
+//
+//    List<char[]> blocks = getBlocksByFCB(fcb);
+//    try {
+//      writeBlocksToCSV(fcbName, blocks);
+//      System.out.println("CSV file reconstructed: " + fcbName);
+//    } catch (IOException e) {
+//      e.printStackTrace();
+//    }
+//  }
 
   //remove a given fcb from the PFS file
   // delete the FCB metadata from the 6th block

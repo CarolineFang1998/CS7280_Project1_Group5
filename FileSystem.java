@@ -162,14 +162,30 @@ public class FileSystem {
           if (commandParts.length > 1) {
               // todo: implement get
             String fileName = commandParts[1];
+            // find the fcb
+            if (currentDatabase.findFCBByName(fileName)==null) {
+              System.out.println("FCB file not found.");
+              continue;
+            }
             FCB fcb = currentDatabase.findFCBByName(fileName);
 //            currentDatabase.getFirstPFS().reconstructCSVFromFCB(fileName);
             List<char[]> blocksData = currentDatabase.getFirstPFS().getBlocksByFCB(fcb);
 //            currentDatabase.getFirstPFS().showBlocksData(blocksData);
-            for (char[] blockData : blocksData) {
-              List<String> record =currentDatabase.getFirstPFS().extractRecordsFromBlock(blockData);
-              System.out.println(record);
-            }
+            currentDatabase.getFirstPFS().writeRecordsToCSV(fileName, blocksData);
+//            for (char[] blockData : blocksData) {
+//
+//              List<String> records =currentDatabase.getFirstPFS().extractRecordsFromBlock(blockData);
+//              currentDatabase.getFirstPFS().writeRecordsToCSV(fileName, records);
+//              for (String record : records) {
+//                System.out.println(record);
+                // write to a new csv file and store in the download directory
+
+
+//                currentDatabase.getFirstPFS().writeRecordsToCSV(fileName, record);
+//              }
+//
+
+
 
 
 
