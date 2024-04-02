@@ -567,6 +567,36 @@ public class DB {
     return pfs.getRecord(blockNumber, recordNumber);
   }
 
+ /*
+  @param name The name of the FCB to search for.
+    @return The FCB with the specified name, or null if no FCB with that name exists.
+  */
+  public FCB findFCBByName(String name) {
+    // Assuming fcbList is a List<FCB> storing all FCBs
+    for (FCB fcb : fcbList) {
+      if (fcb.getName().equals(name)) {
+        return fcb;
+      }
+    }
+    return null; // FCB not found
+  }
+  // DB get pfsList's first element
+    public PFS getFirstPFS() {
+        return pfsList.get(0);
+    }
+
+
+
+    // rm related methods
+    public void removeFCB(String name) {
+        FCB fcb = findFCBByName(name);
+        if (fcb != null) {
+            fcbList.remove(fcb);
+            System.out.println("FCB " + name + " removed.");
+        } else {
+            System.out.println("FCB " + name + " not found.");
+        }
+    }
 
 
 

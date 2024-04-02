@@ -4,6 +4,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -160,6 +161,18 @@ public class FileSystem {
         } else if ("get".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
               // todo: implement get
+            String fileName = commandParts[1];
+            FCB fcb = currentDatabase.findFCBByName(fileName);
+//            currentDatabase.getFirstPFS().reconstructCSVFromFCB(fileName);
+            List<char[]> blocksData = currentDatabase.getFirstPFS().getBlocksByFCB(fcb);
+//            currentDatabase.getFirstPFS().showBlocksData(blocksData);
+            for (char[] blockData : blocksData) {
+              List<String> record =currentDatabase.getFirstPFS().extractRecordsFromBlock(blockData);
+              System.out.println(record);
+            }
+
+
+
           } else {
             System.out.println("Missing filename for 'get' command.");
           }
@@ -175,7 +188,14 @@ public class FileSystem {
           if (commandParts.length > 1) {
             String nameandkey = commandParts[1]; //"movies-small.csv.100"
             // split the name and key
-            int key = Integer.parseInt(nameandkey.split("\\.")[2]);
+            // name = movies-small.csv
+            String name = nameandkey.split("\\.")[0] + "." + nameandkey.split("\\.")[1]; //name = movies-small.csv
+            int key = Integer.parseInt(nameandkey.split("\\.")[2]); //key = 100
+            // find the fcb
+            if (currentDatabase.findFCBByName(name)==null) {
+              System.out.println("FCB file not found.");
+              continue;
+            }
 
             // todo: implement find
             String pointer = currentDatabase.search(key);

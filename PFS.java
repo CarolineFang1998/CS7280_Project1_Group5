@@ -423,7 +423,7 @@ public class PFS {
       int newBlockIndex = findNextFreeBlock(); // Implement this to find an empty block
       if (newBlockIndex != -1) {
         // Update the pointer in the current block to the new block
-        updateBlockPointer(newBlockIndex, String.format("%10s", newBlockIndex));
+        updateBlockPointer(newBlockIndex, String.format("%07d", newBlockIndex));
 
         // Store the new metadata in the new block
         appendMetadataToBlock(this.content[newBlockIndex], metadata, 0);
@@ -970,6 +970,79 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
 
     return new String(recordChars).trim();
   }
+
+  //read the blocks from the PFS content based on the block pointers or indexes stored in the FCB
+  public List<char[]> getBlocksByFCB(FCB fcb) {
+    List<char[]> blocksData = new ArrayList<>();
+    // Assuming the FCB has methods to get the starting and ending block indexes
+    String startBlock = fcb.getDataStartBlock();
+    // parse the startBlock to get the block number
+    int startBlockNum = Integer.parseInt(startBlock);
+
+
+    for (int i = startBlockNum; i <= startBlockNum+fcb.getSize()-2; i++) {
+      blocksData.add(content[i]);
+    }
+    return blocksData;
+  }
+  public List<String> extractRecordsFromBlock(char[] block) {
+    List<String> records = new ArrayList<>();
+    int recordLength = 40; // Each record is 40 characters long
+    int totalRecords = 6; // There are 6 records in a block
+
+    for (int i = 0; i < totalRecords; i++) {
+      int start = i * recordLength;
+      String record = new String(block, start, recordLength).trim(); // Trim any trailing whitespace
+      records.add(record);
+    }
+
+    return records;
+  }
+  // print out the records
+  public void showRecords(List<String> records) {
+    for (String record : records) {
+      System.out.println(record);
+    }
+  }
+
+
+  //print out the blocks data
+    public void showBlocksData(List<char[]> blocks) {
+        for (char[] block : blocks) {
+          //TODO : deal with pointers
+        System.out.println(new String(block).trim());
+        }
+    }
+  // Assuming this method is also in the PFS class or a utility class
+  public void writeBlocksToCSV(String fcbName, List<char[]> blocks) throws IOException {
+    String newFileName = "reconstructed_" + fcbName; // New CSV file name
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(newFileName))) {
+      for (char[] block : blocks) {
+        String blockData = new String(block).trim(); // Convert to string and trim
+        writer.write(blockData);
+        writer.newLine(); // Assuming CSV data does not span multiple blocks
+      }
+    }
+  }
+  public void reconstructCSVFromFCB(String fcbName) {
+    FCB fcb = db.findFCBByName(fcbName);
+    if (fcb == null) {
+      System.out.println("FCB not found for name: " + fcbName);
+      return;
+    }
+
+    List<char[]> blocks = getBlocksByFCB(fcb);
+    try {
+      writeBlocksToCSV(fcbName, blocks);
+      System.out.println("CSV file reconstructed: " + fcbName);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  //remove a given fcb from the PFS file
+  // delete the FCB metadata from the 6th block
+  // update number of FCB files in the superblock
 
 
 

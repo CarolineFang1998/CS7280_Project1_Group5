@@ -35,6 +35,14 @@ public class FCB {
     public int getSize() {
         return size;
     }
+    public String getDataStartBlock() {
+        return dataStartBlock;
+    }
+    public String getIndexStartBlock() {
+        return indexStartBlock;
+    }
+
+
     public void showContent() {
         System.out.println(name+" "+time.format(DateTimeFormatter.ofPattern("dd/MMM/HH:mma"))+" "+size*256+" Bytes");
 
