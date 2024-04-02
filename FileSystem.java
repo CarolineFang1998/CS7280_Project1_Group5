@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -191,6 +192,11 @@ public class FileSystem {
           }
 
         } else if ("dir".equalsIgnoreCase(command)) {
+          //if fcblist is empty
+            if (currentDatabase.getFcbList().size() == 0) {
+                System.out.println("No FCB files found.");
+                continue;
+            }
           currentDatabase.showPFSFCBMetadata();
 //
         } else if ("show".equalsIgnoreCase(command)) {
@@ -205,7 +211,7 @@ public class FileSystem {
             String name = nameandkey.split("\\.")[0] + "." + nameandkey.split("\\.")[1]; //name = movies-small.csv
             int key = Integer.parseInt(nameandkey.split("\\.")[2]); //key = 100
             // find the fcb
-            if (currentDatabase.findFCBByName(name)==null) {
+            if (currentDatabase.findFCBByName(name) == null) {
               System.out.println("FCB file not found.");
               continue;
             }
@@ -223,12 +229,56 @@ public class FileSystem {
             System.out.println("Record found: " + record);
 
 
-
-
-
           } else {
             System.out.println("Missing key for 'find' command.");
           }
+        }else if ("rm".equalsIgnoreCase(command)){
+            if (commandParts.length > 1) {
+              String FCBName = commandParts[1]; //"movies-small.csv"
+              // find the fcb
+              if (currentDatabase.findFCBByName(FCBName) == null) {
+                System.out.println("FCB file not found.");
+                continue;
+              }
+              FCB fcb = currentDatabase.findFCBByName(FCBName);
+              int fcbIndex = currentDatabase.getFcbList().indexOf(fcb);
+              System.out.println("fcb index: " + fcbIndex);
+
+                // remove the fcb from the fcb list
+//              currentDatabase.removeFCB(FCBName);
+              //print the fcb content
+              int existingMetadataCount = currentDatabase.getNumOfFCBFiles();
+              char[] fcbBlock = currentDatabase.getFirstPFS().getContent()[5];
+              for (int i = 0; i < 57; i++) {
+                System.out.print(fcbBlock[i]);
+              }
+              //print fcb content
+              System.out.println("FCB content before removal:");
+              System.out.println(fcbBlock);
+              PFS pfs = currentDatabase.getFirstPFS();
+              pfs.removeElements(fcbBlock, fcbIndex);
+
+
+//              currentDatabase.getFirstPFS().removeFCBFromBlock(currentDatabase.getFirstPFS().getContent()[5], FCBName,
+//                      existingMetadataCount);
+              currentDatabase.deleteOneFCBFile();
+              currentDatabase.getFirstPFS().updateSuperBlock();
+              // remove from fcb list
+              currentDatabase.removeFCB(FCBName);
+              System.out.println("FCB content after removal:");
+              System.out.println(fcbBlock);
+
+
+
+
+
+                // remove the fcb from the pfs
+//              currentDatabase.getFirstPFS().deleteFCBMetadata(fcb);
+//              System.out.println("FCB file removed: " + FCBName);
+
+            } else {
+              System.out.println("Missing filename for 'rm' command.");
+            }
 
         } else {
           System.out.println("Unknown command or command not available outside a database context.");

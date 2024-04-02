@@ -875,7 +875,7 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
   // printout this.content[5]
   public void showFCBContent() {
     final int METADATA_SIZE = 57; // Size of each metadata entry
-    char[] block = this.content[5]; // Assuming this is your metadata block
+    char[] block = this.content[5]; // Assuming this is the metadata block
     StringBuilder builder = new StringBuilder();
 
     // Iterate over each metadata entry
@@ -1070,11 +1070,43 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
 //    }
 //  }
 
-  //remove a given fcb from the PFS file
-  // delete the FCB metadata from the 6th block
-  // update number of FCB files in the superblock
 
 
+  // write a method to find out the block number of a given FCB
+    public int findBlockNumberByFCB(FCB fcb) {
+        // Assuming the FCB has a method to get the starting block index
+        String startBlock = fcb.getDataStartBlock();
+        return Integer.parseInt(startBlock);
+    }
+
+  public char[][] getContent() {
+    return this.content;
+  }
+  public void removeElements(char[] block, int startIndex) {
+    final int LENGTH_TO_REMOVE = 57;
+    int endIndex = startIndex + LENGTH_TO_REMOVE - 1;
+
+    // Ensure endIndex does not exceed the array bounds
+    if (endIndex >= block.length) {
+      System.err.println("End index is out of bounds.");
+      return;
+    }
+
+    // Shift elements to the left to overwrite the elements to be "removed"
+    int shiftStartIndex = endIndex + 1;
+    for (int i = startIndex; i < block.length - LENGTH_TO_REMOVE; i++) {
+      if (shiftStartIndex < block.length) {
+        block[i] = block[shiftStartIndex++];
+      } else {
+        block[i] = '\0'; // Fill the remaining space with null characters or any default value
+      }
+    }
+
+    // Optional: Fill the end of the array with a default value if desired
+    for (int i = block.length - LENGTH_TO_REMOVE; i < block.length; i++) {
+      block[i] = '\0'; // Assuming you want to clear the shifted elements
+    }
+  }
 
 }
 

@@ -497,6 +497,9 @@ public class DB {
   public int getNumOfFCBFiles() {
     return numOfFCBFiles;
   }
+  public int deleteOneFCBFile() {
+    return --numOfFCBFiles;
+  }
 
   public void setNumOfFCBFiles(int numOfFCBFiles) {
     this.numOfFCBFiles = numOfFCBFiles;
@@ -583,6 +586,10 @@ public class DB {
   // DB get pfsList's first element
     public PFS getFirstPFS() {
         return pfsList.get(0);
+    }
+    // DB get fcbList
+    public List<FCB> getFcbList() {
+        return fcbList;
     }
 
 
