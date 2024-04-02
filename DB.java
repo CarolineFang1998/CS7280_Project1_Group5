@@ -18,6 +18,7 @@ public class DB {
   private int numOfPFSFiles; // Number of PFC files, default value 1
   private List<PFS> pfsList; // List of PFS instances associated with this database.
   private List<FCB> fcbList; // List of FCB instances associated with this database.
+  private Btree btree;
 
   /**
    * Constructor for the DB class. Initializes a new database or loads an existing one.
@@ -32,6 +33,7 @@ public class DB {
     this.blockSize = blockSize;
     this.pfsList = new ArrayList<>();
     this.fcbList = new ArrayList<>();
+    this.btree = new Btree();
     if (!isLoad) {
       init();
     } else {
@@ -283,8 +285,12 @@ public class DB {
         System.err.println("An error occurred while writing the file: " + e.getMessage());
       }
     }
+    // rootBlockPointer is the root block pointer of
     return rootBlockPointer;
   }
+  // get the root block number
+
+
 
   // get the btree size and find empty blocks in database
   public List<String> findEmptyBlocks(int btreeSize) {
@@ -307,7 +313,7 @@ public class DB {
 //        }
 
         System.out.println("Inserted index block " + assignedBlock +" to .db" + pfsList.get(i).getSequenceNumber());
-
+        // blockeleft mi
         blockleft -= assignedBlock;
 
         try {
@@ -355,15 +361,24 @@ public class DB {
 
   // inserted all the keys and genarate a B-tree
   public Btree generateBTree(List<KeyPointer> keyPointerList){
-    Btree btree = new Btree();
+//    Btree btree = new Btree();
+    this.btree = new Btree();
 
     for(KeyPointer currKeyPtr:keyPointerList) {
 //      System.out.println(currKeyPtr.getKey() + " " + currKeyPtr.getKeyPointerStr());
-      btree.Insert(currKeyPtr);
+//      btree.Insert(currKeyPtr);
 //      btree.DisplayEntileBTree();
+      this.btree.Insert(currKeyPtr);
     }
     return btree;
   }
+
+
+
+  public int getRootBlockNumber(Btree btree) {
+    return btree.getRoot();
+  }
+
 
   /**
    * Stores data blocks across one or more PFS files, managing the distribution of blocks based on available space.
@@ -509,6 +524,52 @@ public class DB {
       pfs.showContent();
     }
   }
+  public Btree getBtree() {
+    return btree;
+  }
+
+  /**
+   * Searches for a key in the database.
+   *
+   * @param key The key to search for.
+   * @return Datablock pointer associated with the key, or null if the key is not found. 00000061
+   */
+    public String search(int key) {
+      // Use the B-tree's Lookup method to determine if the key exists
+      SearchResult result = this.btree.Lookup(key);
+        if (result.found) {
+            // If the key exists, return the pointer associated with the key
+          //  get the pointer from the btree, and print out the key's record
+//            System.out.println("Key found.");
+//            System.out.println(result.keyPointer.getKeyPointerStr());
+
+
+            //return the data block pointer
+            return result.keyPointer.getPointer();
+
+
+        } else {
+            // If the key does not exist, print a message and return null
+            System.out.println("Key not found.");
+            return null;
+        }
+    }
+
+  public String getRecordbyDataBlockPointer(int pfsNumber, int blockNumber, int recordNumber) {
+    if (pfsNumber < 0 || pfsNumber >= pfsList.size()) {
+      throw new IllegalArgumentException("PFS number out of range.");
+    }
+
+    PFS pfs = pfsList.get(pfsNumber);
+
+
+    // Use PFS.getRecord to fetch the specific record
+    return pfs.getRecord(blockNumber, recordNumber);
+  }
+
+
+
+
 
 
 }

@@ -173,7 +173,26 @@ public class FileSystem {
 //
         }else if ("find".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
+            String nameandkey = commandParts[1]; //"movies-small.csv.100"
+            // split the name and key
+            int key = Integer.parseInt(nameandkey.split("\\.")[2]);
+
             // todo: implement find
+            String pointer = currentDatabase.search(key);
+            if (pointer == null) {
+
+              continue;
+            }
+            DataBlockPointer dataBlockPointer = new DataBlockPointer(pointer);
+            String record = currentDatabase.getRecordbyDataBlockPointer(dataBlockPointer.getPfsNumber(),
+                    dataBlockPointer.getBlockNumber(), dataBlockPointer.getRecordNumber());
+
+            System.out.println("Record found: " + record);
+
+
+
+
+
           } else {
             System.out.println("Missing key for 'find' command.");
           }

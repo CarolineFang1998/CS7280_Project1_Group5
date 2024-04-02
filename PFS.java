@@ -815,7 +815,7 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
 
   }
 
-  private void readBlocks(BufferedReader reader) throws IOException {
+  public void readBlocks(BufferedReader reader) throws IOException {
     int rowIndex = 6; // Start directly after FCB block
     while (rowIndex < 4000) {
       String line = reader.readLine();
@@ -916,6 +916,67 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
 //    return fcbs;
 //  }
 
+
+//  /**
+//   * Reads a block from the PFS file based on the block number.
+//   *
+//   * @param blockNumber The block number to read.
+//   * @return The data of the block as a char array.
+//   * @throws IOException If reading the file fails.
+//   */
+//  public char[] readBlockByBlockNumber(int blockNumber) throws IOException {
+//    RandomAccessFile file = new RandomAccessFile(fileName, "r");
+//
+//    // Calculate the offset in the file where the block starts
+//    long offset = (long) blockNumber * 256;
+//
+//    // Move to the start of the block
+//    file.seek(offset);
+//
+//    // Read the block into a byte array
+//    byte[] bytes = new byte[256];
+//    file.readFully(bytes);
+//    file.close();
+//
+//    // Convert the byte array to a char array
+//    char[] chars = new char[256];
+//    for (int i = 0; i < 256; i++) {
+//      chars[i] = (char) (bytes[i] & 0xFF); // Convert each byte to char
+//    }
+//
+//    return chars;
+//  }
+  /**
+   * Reads a block from the PFS file based on the block number.
+   *
+   * @param blockNumber The block number to read.
+   * @return The data of the block as a char array.
+   * @throws IOException If reading the file fails.
+   */
+  public String getRecord(int blockNumber, int recordNumber) {
+    if (blockNumber < 0 || blockNumber >= content.length) {
+      throw new IllegalArgumentException("Block number out of range.");
+    }
+    if (recordNumber < 0 || recordNumber >= 6) { // Assuming max 6 records per block
+      throw new IllegalArgumentException("Record number out of range.");
+    }
+
+    int recordSize = 40; // fixed size for each record
+    int startIndex = recordNumber * recordSize;
+
+    char[] block = content[blockNumber];
+    char[] recordChars = new char[recordSize];
+    System.arraycopy(block, startIndex, recordChars, 0, recordSize);
+
+    return new String(recordChars).trim();
+  }
+
+
+
 }
+
+
+
+
 
 

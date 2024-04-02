@@ -59,9 +59,12 @@ final class Btree {
    * @param value The value to search for.
    * @return True if the value exists in the B-tree, false otherwise.
    */
-  public boolean Lookup(int value) {
-    return nodeLookup(value, root, "");
-  }
+//  public boolean Lookup(int value) {
+//    return nodeLookup(value, root, "", 0).found;
+//  }
+    public SearchResult Lookup(int value) {
+        return nodeLookup(value, root, "", 0);
+    }
 
   /*
    * Inserts a value into the B-tree.
@@ -155,46 +158,82 @@ final class Btree {
 
   /*********** B-tree functions for Internal  ******************/
 
-  /**
-   * Searches for a given value starting from a specified node in the B-tree.
-   * 
-   * This method recursively traverses down the B-tree starting from the node
-   * pointed by `pointer`, following the correct path based on the value comparisons,
-   * until it either finds the value or reaches a leaf node without finding it.
-   * 
-   * @param value The value to search for in the B-tree.
-   * @param pointer The index of the node from which the search starts.
-   * @param s A string representing the path taken during the search.
-   * @return True if the value is found, false otherwise.
-   */
-  private boolean nodeLookup(int value, int pointer, String s) {
-    Node node = nodes[pointer];
-    int i = 0;
-    s += "" + pointer;
+//  /**
+//   * Searches for a given value starting from a specified node in the B-tree.
+//   *
+//   * This method recursively traverses down the B-tree starting from the node
+//   * pointed by `pointer`, following the correct path based on the value comparisons,
+//   * until it either finds the value or reaches a leaf node without finding it.
+//   *
+//   * @param value The value to search for in the B-tree.
+//   * @param pointer The index of the node from which the search starts.
+//   * @param s A string representing the path taken during the search.
+//
+//   * @return True if the value is found, false otherwise.
+//   */
+//  private boolean nodeLookup(int value, int pointer, String s) {
+//    Node node = nodes[pointer];
+//
+//    int i = 0;
+//    s += "" + pointer;
+//
+//    // Iterate through keys in the node to find the smallest index i such that value <= node.values[i]
+//    while (i >= 0 && i < node.size && value > node.values[i].getKey()) {
+//        i++;
+//    }
+//
+//    // If the value matches the key at index i in the node
+//    if (i >= 0 && i < node.size && value == node.values[i].getKey()) {
+//        System.out.println("Founded " + value + " Path: " + s );
+//        return true; // The value is found
+//    }
+//
+//    // If the node is a leaf, then the search is unsuccessful
+//    if (isLeaf(node)) {
+//      System.out.println( "No key found");
+//      return false;
+//    } else {
+//       s += " -> " ;
+//      // Recur to search the appropriate subtree
+//        return nodeLookup(value, node.children[i], s);
+//    }
+//  }
 
-    // Iterate through keys in the node to find the smallest index i such that value <= node.values[i]
-    while (i >= 0 && i < node.size && value > node.values[i].getKey()) {
-        i++;
-    }
+  private SearchResult nodeLookup(int value, int pointer, String s, int accessedBlocks) {
+      if (pointer == -1) {
+          return new SearchResult(null, accessedBlocks, false); // Node not found, and no more nodes to access
+      }
 
-    // If the value matches the key at index i in the node
-    if (i >= 0 && i < node.size && value == node.values[i].getKey()) {
-        System.out.println("Founded " + value + " Path: " + s );
-        return true; // The value is found
-    }
+      Node node = nodes[pointer];
+      accessedBlocks++; // Increment for accessing this node
 
-    // If the node is a leaf, then the search is unsuccessful
-    if (isLeaf(node)) {
-      System.out.println( "No key found");
-      return false;
-    } else {
-       s += " -> " ;
-      // Recur to search the appropriate subtree
-        return nodeLookup(value, node.children[i], s);
-    }
+      int i = 0;
+      s += "" + pointer;
+      while (i < node.size && value > node.values[i].getKey()) {
+          i++;
+      }
+      // if value matches the key at index i in the node
+
+
+      if (i < node.size && value == node.values[i].getKey()) {
+          // If the value matches the key at index i in the node
+//          System.out.println("Found " + value +  s + " after accessing " + accessedBlocks + " blocks");
+          System.out.println("# of Blocks =" + accessedBlocks);
+          return new SearchResult(node.values[i], accessedBlocks, true); // The value is found
+      }
+
+      if (isLeaf(node)) {
+          // If the node is a leaf, then the search is unsuccessful
+          System.out.println("No key found after accessing " + accessedBlocks + " blocks");
+          return new SearchResult(null, accessedBlocks, false);
+      } else {
+          s += " -> " ;
+          // Recur to search the appropriate subtree
+          return nodeLookup(value, node.children[i], s,accessedBlocks);
+      }
   }
 
-  /**
+    /**
    * Splits a full child node of a given parent node into two nodes.
    * 
    * When a child node has reached its maximum capacity (NODESIZE), this method
@@ -384,6 +423,7 @@ final class Btree {
       nodes = tmp;
     }
   }
+
 }
 
 /*
@@ -407,4 +447,15 @@ final class Node {
 
   /* Number of children*/
   int childrenSize;
+}
+class SearchResult {
+    KeyPointer keyPointer;
+    int blockAccesses;
+    boolean found;
+
+    public SearchResult(KeyPointer keyPointer, int blockAccesses,boolean found) {
+        this.keyPointer= keyPointer;
+        this.blockAccesses = blockAccesses;
+        this.found = found;
+    }
 }
