@@ -1003,14 +1003,15 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
   // write the records to a CSV file
     public void writeRecordsToCSV(String fileName, List<char[]>blocksData)
             throws IOException {
-      String directoryPath = "download"; // The name of the directory to store the CSV files
+      String directoryPath = "./download"; // The name of the directory to store the CSV files
       try {
         // Ensure the download directory exists
         Files.createDirectories(Paths.get(directoryPath));
 
         // Construct the full path for the new CSV file within the download directory
         File file = new File(directoryPath, fileName);
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
           for (char[] blockData : blocksData) {
             List<String> records = extractRecordsFromBlock(blockData);
             for (String record : records) {

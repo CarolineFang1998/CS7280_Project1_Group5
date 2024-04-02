@@ -168,9 +168,7 @@ public class FileSystem {
               continue;
             }
             FCB fcb = currentDatabase.findFCBByName(fileName);
-//            currentDatabase.getFirstPFS().reconstructCSVFromFCB(fileName);
             List<char[]> blocksData = currentDatabase.getFirstPFS().getBlocksByFCB(fcb);
-//            currentDatabase.getFirstPFS().showBlocksData(blocksData);
             currentDatabase.getFirstPFS().writeRecordsToCSV(fileName, blocksData);
 //            for (char[] blockData : blocksData) {
 //
@@ -181,7 +179,6 @@ public class FileSystem {
                 // write to a new csv file and store in the download directory
 
 
-//                currentDatabase.getFirstPFS().writeRecordsToCSV(fileName, record);
 //              }
 //
 
