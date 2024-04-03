@@ -143,6 +143,7 @@ public class PFS {
     }
 
 //    System.out.println("keyPointerList.size() " + keyPointerList.size());
+    System.out.println("startNEndPtrs " + startNEndPtrs);
     return startNEndPtrs;
   }
 
@@ -180,6 +181,7 @@ public class PFS {
 
       // Generate the DataBlockPointer for this record
       DataBlockPointer dbPointer = new DataBlockPointer(this.sequenceNumber, blockNum, i);
+//      System.out.println("blockNum " + blockNum + " i " + i + " " + dbPointer.getPtrString()  + " " + key);
 
       // Create the current record list containing the key and DataBlockPointer string
       KeyPointer currKeyPtr = new KeyPointer(Integer.valueOf(key), dbPointer.getPtrString());
@@ -187,9 +189,9 @@ public class PFS {
 
       // Add the current record to the keyPointerList
       keyPointerList.add(currKeyPtr);
+//      System.out.println("keyPointerList.size() " + keyPointerList.size());
     }
-//    // store the keyPointerList to this.keyPointerList
-//    this.keyPointerList = keyPointerList;
+
   }
 
 
@@ -1157,11 +1159,16 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
   public void freeBlocksByFCB(String fcbName) {
     List<KeyPointer> keyPointerList = db.getKeyPointerList(fcbName);
     for (KeyPointer kp : keyPointerList) {
-      int blockNum = Integer.parseInt(kp.getPointer());
-//      System.out.println("Freeing block: " + blockNum);
+      String pointer = kp.getPointer();
+      DataBlockPointer dbp = new DataBlockPointer(pointer);
+      // blockNum is the pointer
+      int blockNum = dbp.getBlockNumber();
+//      int blockNum = Integer.parseInt(kp.getPointer());
+      System.out.println("Freeing block: " + blockNum);
       updateBitMap(blockNum, false);
 
     }
+    System.out.println("empty blocks " +this.blockLeft);
 
 
   }
