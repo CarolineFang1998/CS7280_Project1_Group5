@@ -61,7 +61,7 @@ For each record, we store the key and value as characters. We are using linked a
 ![Alt text](images/datablock.png)
 
 
-###.dbN(excluding .db0) Design
+### .dbN(excluding .db0) Design
 When the .db0 file is full, our database will create a new .db file to store more data. Subsequent .dbN files (.db1, .db2, etc.) store the bitmap in the first 4 blocks. The remaining blocks will be either index blocks or data blocks.
 
 <img src="images/Project2_Design_Part2.png" width="200" height="" alt="Project 2 Design Part 1">
@@ -191,7 +191,8 @@ test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
     - When a node is split, the middle value is promoted to the parent node. If the parent node is full, it is split recursively.
     - after the promotion, the new key is inserted to the child node.
 - ![Alt text](images/insert_2.png)
-- **Summary**
+
+**Summary**
   - insertion order: check if node is full, splitting-promote-insert
   - Split the tree when needed: tree grows in height only when absolutely necessary
   - Efficient Handling of Full Nodes: This is because it avoids the need to backtrack and split the node after finding it's full
