@@ -241,6 +241,13 @@ public class FileSystem {
               System.out.println("FCB file not found.");
               continue;
             }
+            FCB fcb = currentDatabase.findFCBByName(name);
+            // find the btree
+            Btree bTree = currentDatabase.getBtree(name);
+            bTree.DisplayEntileBTree();
+//            // print key and pointer
+//            System.out.println(currentDatabase.getKeyPointerList(name));
+
 
             //name = movies-small
             String FCBName = name.split("\\.")[0];
@@ -284,6 +291,8 @@ public class FileSystem {
             System.out.println(fcbBlock);
             PFS pfs = currentDatabase.getFirstPFS();
             pfs.removeElements(fcbBlock, fcbIndex);
+            // update bitmap
+            pfs.freeBlocksByFCB(FCBName);
 
 
 //

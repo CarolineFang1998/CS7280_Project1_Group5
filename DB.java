@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.security.Key;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
@@ -17,8 +18,9 @@ public class DB {
   private int numOfPFSFiles; // Number of PFC files, default value 1
   private List<PFS> pfsList; // List of PFS instances associated with this database.
   private List<FCB> fcbList; // List of FCB instances associated with this database.
-  private Btree btree;
+
   private Map<String, Btree> filenameToBtreeMap;
+  private Map<String,List<KeyPointer>> keyPointerMap;
 
   /**
    * Constructor for the DB class. Initializes a new database or loads an existing one.
@@ -33,8 +35,9 @@ public class DB {
     this.blockSize = blockSize;
     this.pfsList = new ArrayList<>();
     this.fcbList = new ArrayList<>();
-    this.btree = new Btree();
+
     this.filenameToBtreeMap = new HashMap<>();
+    this.keyPointerMap = new HashMap<>();
     if (!isLoad) {
       init();
     } else {
@@ -374,8 +377,12 @@ public class DB {
     }
     // Add the B-tree to the mapping with its corresponding FCB filename
     this.filenameToBtreeMap.put(fcbFilename, btree);
+    this.keyPointerMap.put(fcbFilename, keyPointerList);
 
     return btree;
+  }
+  public List<KeyPointer> getKeyPointerList(String fcbFilename) {
+    return this.keyPointerMap.get(fcbFilename);
   }
 
   //get btree using fcb filename
@@ -618,6 +625,8 @@ public class DB {
             System.out.println("FCB " + name + " not found.");
         }
     }
+
+
 
 
 

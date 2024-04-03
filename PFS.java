@@ -19,6 +19,7 @@ public class PFS {
   private int blockLeft; // how many block left for this PFS file
   private int emptyBlock; // block # for next empty block
   private String fileName; // the file name for this PFS file
+//  private List<KeyPointer> keyPointerList;
 
 
   /**
@@ -34,6 +35,7 @@ public class PFS {
     this.sequenceNumber = PFSNumber; // if .db0, sequenceNumber = 0
     this.content = new char[4000][db.getBlockSize()]; // first block is always bitmap
     this.fileName = db.getName() + ".db" + PFSNumber;
+//    this.keyPointerList = new ArrayList<>();
 
     // check if this file is already exist
     if (db.getNumOfPFSFiles() >= sequenceNumber + 1) {
@@ -156,7 +158,7 @@ public class PFS {
    *                       {"1", "1,Toy Story (1995),Adventure|Animation|C"}
    * @param blockNum       The block number where the data is stored. From 0 to 3999
    */
-  void updateKeyPointerList(char[] block, List<KeyPointer> keyPointerList, int blockNum) {
+  public void updateKeyPointerList(char[] block, List<KeyPointer> keyPointerList, int blockNum) {
     // 6 records in one data block, each 40 characters long
     int recordLength = 40;
     for (int i = 0; i < 6; i++) {
@@ -186,6 +188,8 @@ public class PFS {
       // Add the current record to the keyPointerList
       keyPointerList.add(currKeyPtr);
     }
+//    // store the keyPointerList to this.keyPointerList
+//    this.keyPointerList = keyPointerList;
   }
 
 
@@ -868,12 +872,23 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
   // printout this.content
   public void showContent() {
     for (int i = 0; i < 4000; i++) {
-      // if content[i] is ' ' or '\0', skip it
-        if (this.content[i] == null) {
-            continue;
+      for(int j = 0; j < 256; j++) {
+
+        if (this.content[i][j] != ' ') {
+          // don't print out the space
+          System.out.print(this.content[i][j]);
         }
-      System.out.println(this.content[i]);
-    }
+
+      }
+
+      }
+//    System.out.println("\n" + "datapointer");
+//
+//    for (KeyPointer kp : keyPointerList) {
+//
+//      System.out.println(kp.getPointer());
+//    }
+
   }
 
   // printout this.content[5]
@@ -1135,7 +1150,23 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
         System.err.println("An error occurred while writing the file: " + e.getMessage());
       }
     }
-  //TODO: iterate the entire tree and when find FCB block, update the bitmap from 1 to 0
+  //TODO: traverse pfs based on given fcb,  update the bitmap from 1 to 0
+
+
+  // iterate keypointer list, and update the bitmap
+  public void freeBlocksByFCB(String fcbName) {
+    List<KeyPointer> keyPointerList = db.getKeyPointerList(fcbName);
+    for (KeyPointer kp : keyPointerList) {
+      int blockNum = Integer.parseInt(kp.getPointer());
+//      System.out.println("Freeing block: " + blockNum);
+      updateBitMap(blockNum, false);
+
+    }
+
+
+  }
+
+
 
 
 }
