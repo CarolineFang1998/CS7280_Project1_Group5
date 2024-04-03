@@ -868,6 +868,10 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
   // printout this.content
   public void showContent() {
     for (int i = 0; i < 4000; i++) {
+      // if content[i] is ' ' or '\0', skip it
+        if (this.content[i] == null) {
+            continue;
+        }
       System.out.println(this.content[i]);
     }
   }
@@ -1132,6 +1136,7 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
       }
     }
   //TODO: iterate the entire tree and when find FCB block, update the bitmap from 1 to 0
+
 
 }
 

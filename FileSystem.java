@@ -69,8 +69,8 @@ public class FileSystem {
     System.out.println("NoSQL CLI started. Type 'quit' to exit.");
     while (true) {
       System.out.print("NoSQL> ");
-      if(currentDatabase != null) {
-        System.out.print( currentDatabase.getName() +"> ");
+      if (currentDatabase != null) {
+        System.out.print(currentDatabase.getName() + "> ");
       }
       String input = reader.readLine().trim();
       String[] commandParts = input.split(" ", 3); // Split the command and arguments
@@ -88,16 +88,16 @@ public class FileSystem {
             }
 
             // Delete files
-              File currentDir = new File(".");
-              FilenameFilter filter = (dir, name) -> name.startsWith(dbNameToKill);
-              File[] filesToKill = currentDir.listFiles(filter);
-              for (File file : filesToKill) {
-                if (!file.delete()) {
-                  System.out.println("Failed to delete file: " + file.getName());
-                } else {
-                  System.out.println("Deleted file: " + file.getName());
-                }
+            File currentDir = new File(".");
+            FilenameFilter filter = (dir, name) -> name.startsWith(dbNameToKill);
+            File[] filesToKill = currentDir.listFiles(filter);
+            for (File file : filesToKill) {
+              if (!file.delete()) {
+                System.out.println("Failed to delete file: " + file.getName());
+              } else {
+                System.out.println("Deleted file: " + file.getName());
               }
+            }
           } else {
             System.out.println("No matching db for 'kill' command.");
           }
@@ -109,10 +109,10 @@ public class FileSystem {
         break;
       } else if ("open".equalsIgnoreCase(command)) {
         if (commandParts.length > 1) {
-            String databaseName = commandParts[1];
+          String databaseName = commandParts[1];
           //check if database exist
           // if the database does not exist: create a new database
-          if (uniqueDb0Files.size()==0 || !uniqueDb0Files.contains(databaseName)) {
+          if (uniqueDb0Files.size() == 0 || !uniqueDb0Files.contains(databaseName)) {
             System.out.println("Database does not exist: creating a new database...");
             // create a new database.db0-> input (string name, block size)
             currentDatabase = new DB(databaseName, BLOCK_SIZE, false);
@@ -161,10 +161,10 @@ public class FileSystem {
 
         } else if ("get".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
-              // todo: implement get
+            // todo: implement get
             String fileName = commandParts[1];
             // find the fcb
-            if (currentDatabase.findFCBByName(fileName)==null) {
+            if (currentDatabase.findFCBByName(fileName) == null) {
               System.out.println("FCB file not found.");
               continue;
             }
@@ -177,14 +177,11 @@ public class FileSystem {
 //              currentDatabase.getFirstPFS().writeRecordsToCSV(fileName, records);
 //              for (String record : records) {
 //                System.out.println(record);
-                // write to a new csv file and store in the download directory
+            // write to a new csv file and store in the download directory
 
 
 //              }
 //
-
-
-
 
 
           } else {
@@ -193,17 +190,46 @@ public class FileSystem {
 
         } else if ("dir".equalsIgnoreCase(command)) {
           //if fcblist is empty
-            if (currentDatabase.getFcbList().size() == 0) {
-                System.out.println("No FCB files found.");
-                continue;
-            }
+          if (currentDatabase.getFcbList().size() == 0) {
+            System.out.println("No FCB files found.");
+            continue;
+          }
           currentDatabase.showPFSFCBMetadata();
 //
         } else if ("show".equalsIgnoreCase(command)) {
 //          currentDatabase.showPFSFCBMetadata();
           currentDatabase.showPFSContent();
+//        } else if ("t".equalsIgnoreCase(command)) {
+////          currentDatabase.showPFSFCBMetadata();
+//          if (commandParts.length > 1) {
+//            String FCBName = commandParts[1]; //"movies-small.csv"
+//            // find the fcb
+//            if (currentDatabase.findFCBByName(FCBName) == null) {
+//              System.out.println("FCB file not found.");
+//              continue;
+//            }
+//            FCB fcb = currentDatabase.findFCBByName(FCBName);
+////            String startPointer = fcb.getDataStartBlock();
+////            int startPointerInt = Integer.parseInt(startPointer);
+//            String indexBlock = fcb.getIndexStartBlock();
+//            int indexBlockInt = Integer.parseInt(indexBlock);
+//            currentDatabase.traverseAndUpdateBitmap(indexBlockInt);
 //
-        }else if ("find".equalsIgnoreCase(command)) {
+//
+//          } else {
+//            System.out.println("Missing filename for 't' command.");
+//          }
+
+        } else if ("tree".equalsIgnoreCase(command)) { // given a fcb name, show the btree
+          if (commandParts.length > 1) {
+            String name = commandParts[1];
+            currentDatabase.getBtree(name);
+          } else {
+            System.out.println("Missing filename for 'tree' command.");
+          }
+
+//
+        } else if ("find".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
             String nameandkey = commandParts[1]; //"movies-small.csv.100"
             // split the name and key
@@ -216,8 +242,9 @@ public class FileSystem {
               continue;
             }
 
-
-            String pointer = currentDatabase.search(key);
+            //name = movies-small
+            String FCBName = name.split("\\.")[0];
+            String pointer = currentDatabase.search(key, name);
             if (pointer == null) {
 
               continue;
@@ -232,61 +259,62 @@ public class FileSystem {
           } else {
             System.out.println("Missing key for 'find' command.");
           }
-        }else if ("rm".equalsIgnoreCase(command)){
-            if (commandParts.length > 1) {
-              String FCBName = commandParts[1]; //"movies-small.csv"
-              // find the fcb
-              if (currentDatabase.findFCBByName(FCBName) == null) {
-                System.out.println("FCB file not found.");
-                continue;
-              }
-              FCB fcb = currentDatabase.findFCBByName(FCBName);
-              int fcbIndex = currentDatabase.getFcbList().indexOf(fcb);
-              System.out.println("fcb index: " + fcbIndex);
+        } else if ("rm".equalsIgnoreCase(command)) {
+          if (commandParts.length > 1) {
+            String FCBName = commandParts[1]; //"movies-small.csv"
+            // find the fcb
+            if (currentDatabase.findFCBByName(FCBName) == null) {
+              System.out.println("FCB file not found.");
+              continue;
+            }
+            FCB fcb = currentDatabase.findFCBByName(FCBName);
+            int fcbIndex = currentDatabase.getFcbList().indexOf(fcb);
+            System.out.println("fcb index: " + fcbIndex);
 
-                // remove the fcb from the fcb list
+            // remove the fcb from the fcb list
 //              currentDatabase.removeFCB(FCBName);
-              //print the fcb content
-              int existingMetadataCount = currentDatabase.getNumOfFCBFiles();
-              char[] fcbBlock = currentDatabase.getFirstPFS().getContent()[5];
-              for (int i = 0; i < 57; i++) {
-                System.out.print(fcbBlock[i]);
-              }
-              //print fcb content
-              System.out.println("FCB content before removal:");
-              System.out.println(fcbBlock);
-              PFS pfs = currentDatabase.getFirstPFS();
-              pfs.removeElements(fcbBlock, fcbIndex);
+            //print the fcb content
+            int existingMetadataCount = currentDatabase.getNumOfFCBFiles();
+            char[] fcbBlock = currentDatabase.getFirstPFS().getContent()[5];
+            for (int i = 0; i < 57; i++) {
+              System.out.print(fcbBlock[i]);
+            }
+            //print fcb content
+            System.out.println("FCB content before removal:");
+            System.out.println(fcbBlock);
+            PFS pfs = currentDatabase.getFirstPFS();
+            pfs.removeElements(fcbBlock, fcbIndex);
 
 
 //
-              currentDatabase.deleteOneFCBFile();
-              currentDatabase.getFirstPFS().updateSuperBlock();
-              // remove from fcb list
-              currentDatabase.removeFCB(FCBName);
-              System.out.println("FCB content after removal:");
-              System.out.println(fcbBlock);
-              pfs.updateFCBBlock(5, fcbBlock);
+            currentDatabase.deleteOneFCBFile();
+            currentDatabase.getFirstPFS().updateSuperBlock();
+            // remove from fcb list
+            currentDatabase.removeFCB(FCBName);
+            System.out.println("FCB content after removal:");
+            System.out.println(fcbBlock);
+            pfs.updateFCBBlock(5, fcbBlock);
 
 
-
-
-
-                // remove the fcb from the pfs
+            // remove the fcb from the pfs
 //              currentDatabase.getFirstPFS().deleteFCBMetadata(fcb);
 //              System.out.println("FCB file removed: " + FCBName);
 
-            } else {
-              System.out.println("Missing filename for 'rm' command.");
-            }
+          } else {
+            System.out.println("Missing filename for 'rm' command.");
+          }
+
 
         } else {
           System.out.println("Unknown command or command not available outside a database context.");
         }
 
+
       } else {
         System.out.println("No database open. Use 'open <dbname>' to open a database.");
       }
+
+
     }
   }
 

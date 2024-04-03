@@ -3,8 +3,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Represents a database, handling the creation and management of PFS files
@@ -19,6 +18,7 @@ public class DB {
   private List<PFS> pfsList; // List of PFS instances associated with this database.
   private List<FCB> fcbList; // List of FCB instances associated with this database.
   private Btree btree;
+  private Map<String, Btree> filenameToBtreeMap;
 
   /**
    * Constructor for the DB class. Initializes a new database or loads an existing one.
@@ -34,12 +34,14 @@ public class DB {
     this.pfsList = new ArrayList<>();
     this.fcbList = new ArrayList<>();
     this.btree = new Btree();
+    this.filenameToBtreeMap = new HashMap<>();
     if (!isLoad) {
       init();
     } else {
       // todo, load the previous pfs files
       for (PFS file : pfsList) {
         file.loadExistingPFS();
+        // need to create a pfs first
         // todo: load the fcb lists
 //        for (FCB fcb : fcbList) {
 //          fcb.loadExistingFCB();
@@ -197,7 +199,7 @@ public class DB {
     // add index block
     int indexBlockSize = 0;
     // Generate a b-tree which inserted all the keyPointers
-     Btree btree =  generateBTree(keyPointerList);
+     Btree btree =  generateBTree(keyPointerList, fileName);
 //     btree.DisplayEntileBTree();
 
     // Find how many space we need and generate a List<Empty Block Lists String>
@@ -360,16 +362,26 @@ public class DB {
 
 
   // inserted all the keys and genarate a B-tree
-  public Btree generateBTree(List<KeyPointer> keyPointerList){
-//    Btree btree = new Btree();
-    this.btree = new Btree();
+  public Btree generateBTree(List<KeyPointer> keyPointerList, String fcbFilename){
+    Btree btree = new Btree();
+//    this.btree = new Btree();
 
     for(KeyPointer currKeyPtr:keyPointerList) {
 //      System.out.println(currKeyPtr.getKey() + " " + currKeyPtr.getKeyPointerStr());
-//      btree.Insert(currKeyPtr);
+      btree.Insert(currKeyPtr);
 //      btree.DisplayEntileBTree();
-      this.btree.Insert(currKeyPtr);
+//      this.btree.Insert(currKeyPtr);
     }
+    // Add the B-tree to the mapping with its corresponding FCB filename
+    this.filenameToBtreeMap.put(fcbFilename, btree);
+
+    return btree;
+  }
+
+  //get btree using fcb filename
+  public Btree getBtree(String fcbFilename) {
+    Btree btree = this.filenameToBtreeMap.get(fcbFilename);
+//    btree.DisplayEntileBTree();
     return btree;
   }
 
@@ -527,19 +539,20 @@ public class DB {
       pfs.showContent();
     }
   }
-  public Btree getBtree() {
-    return btree;
-  }
+//  public Btree getBtree() {
+//    return btree;
+//  }
 
   /**
-   * Searches for a key in the database.
+   * Searches for a key in a B-tree and returns the associated data block pointer if the key is found.
    *
    * @param key The key to search for.
    * @return Datablock pointer associated with the key, or null if the key is not found. 00000061
    */
-    public String search(int key) {
+    public String search(int key, String fcbFilename) {
       // Use the B-tree's Lookup method to determine if the key exists
-      SearchResult result = this.btree.Lookup(key);
+      Btree btree = getBtree(fcbFilename);
+      SearchResult result = btree.Lookup(key);
         if (result.found) {
             // If the key exists, return the pointer associated with the key
           //  get the pointer from the btree, and print out the key's record
@@ -606,6 +619,62 @@ public class DB {
         }
     }
 
+
+
+//  public void traverseAndUpdateBitmap(int index) {
+//    if (index < 0 ) {
+//      return;
+//    }
+//    Queue<Integer> queue = new LinkedList<>();
+//    queue.add(index);
+//    int level = 0;
+//
+//
+//    while (!queue.isEmpty()) {
+//      int levelLength = queue.size();
+//      System.out.print("L-" + level + ": ");
+//      level++;
+//      for (int i = 0; i < levelLength; i++) {
+//        int currentId = queue.poll();
+//        System.out.print(currentId + " ");
+//        Node currentNode = this.btree.getNodes()[currentId];
+//
+//        // Print all values within the current node
+//        System.out.print(currentId + "[");
+//        int count = 0;
+////            for (int val : currentNode) {
+//        for (KeyPointer node : currentNode.values) {
+//          int key = node.getKey();
+//          if (count > 0) {
+//            System.out.print(",");
+//          }
+//          if (key != -1) {
+//            System.out.print(key + " ");
+//            System.out.print(node.getPointer());
+////                System.out.print(node.getKeyPointerStr() );
+//          } else {
+//            System.out.print(" ");
+//          }
+//          count++;
+//        }
+//        System.out.print("]");
+//
+//        // Add child nodes of the current node to the queue for later processing
+//        for (int j = 0; j <= this.btree.getNodeSize(); j++) { // Iterate through all possible children
+//          int childId = currentNode.children[j];
+//          if (childId != -1) {
+//            queue.add(childId);
+//          } else {
+//            break;
+//          }
+//        }
+//
+//        System.out.print("\t"); // Tab-space for separating nodes at the same level
+//      }
+
+//      System.out.println(); // Newline after each level is processed
+//    }
+//    }
 
 
 
