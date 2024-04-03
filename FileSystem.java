@@ -6,9 +6,19 @@ import java.io.InputStreamReader;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * A simple file system simulation for managing .db0 database files and
+ * implementing basic database operations through a command-line interface (CLI).
+ */
 public class FileSystem {
-  public static final int BLOCK_SIZE = 256;
+  public static final int BLOCK_SIZE = 256; // The size for a block. Unit is byte
 
+  /**
+   * Finds and returns a set of unique database file names in the current directory,
+   * specifically targeting files with the .db0 extension.
+   *
+   * @return A Set of unique database names, excluding the .db0 extension.
+   */
   public Set<String> findUniqueDb0Files() {
     // Create a File object for the current directory
     File currentDir = new File(".");
@@ -47,20 +57,52 @@ public class FileSystem {
 
     // find all the unique database
     Set<String> uniqueDb0Files = fileSystem.findUniqueDb0Files();
-    System.out.println("Unique .db0 files in the current directory:");
+    System.out.println("Database in the current directory:");
     for (String fileName : uniqueDb0Files) {
       System.out.println(fileName);
     }
+    System.out.println("...........................................");
 
 
     System.out.println("NoSQL CLI started. Type 'quit' to exit.");
     while (true) {
       System.out.print("NoSQL> ");
+      if(currentDatabase != null) {
+        System.out.print( currentDatabase.getName() +"> ");
+      }
       String input = reader.readLine().trim();
       String[] commandParts = input.split(" ", 3); // Split the command and arguments
       String command = commandParts[0];
 
-      if ("quit".equalsIgnoreCase(command)) {
+
+      if ("kill".equalsIgnoreCase(command)) {
+        if (commandParts.length > 1) {
+          String dbNameToKill = commandParts[1];
+          // Make sure database name is valid
+          if (uniqueDb0Files.contains(dbNameToKill)) {
+
+            if (currentDatabase != null && currentDatabase.getName().equals(dbNameToKill)) {
+              currentDatabase = null; // Reset current database if it's killed
+            }
+
+            // Delete files
+              File currentDir = new File(".");
+              FilenameFilter filter = (dir, name) -> name.startsWith(dbNameToKill);
+              File[] filesToKill = currentDir.listFiles(filter);
+              for (File file : filesToKill) {
+                if (!file.delete()) {
+                  System.out.println("Failed to delete file: " + file.getName());
+                } else {
+                  System.out.println("Deleted file: " + file.getName());
+                }
+              }
+          } else {
+            System.out.println("No matching db for 'kill' command.");
+          }
+        } else {
+          System.out.println("Missing database name for 'kill' command.");
+        }
+      } else if ("quit".equalsIgnoreCase(command)) {
         System.out.println("Exiting NoSQL CLI...");
         break;
       } else if ("open".equalsIgnoreCase(command)) {
@@ -69,7 +111,7 @@ public class FileSystem {
           //check if database exist
           // if the database does not exist: create a new database
           if (uniqueDb0Files.size()==0 || !uniqueDb0Files.contains(databaseName)) {
-            System.out.println("if the database does not exist: create a new database");
+            System.out.println("Database does not exist: creating a new database...");
             // create a new database.db0-> input (string name, block size)
             currentDatabase = new DB(databaseName, BLOCK_SIZE, false);
             uniqueDb0Files.add(databaseName);
@@ -131,17 +173,6 @@ public class FileSystem {
             System.out.println("Missing key for 'find' command.");
           }
 
-        } else if ("kill".equalsIgnoreCase(command)) {
-          if (commandParts.length > 1) {
-            // todo: implement kill
-            if (commandParts[1].equals(currentDatabase)) {
-              currentDatabase = null; // Reset current database if it's killed
-            }
-
-          } else {
-            System.out.println("Missing database name for 'kill' command.");
-          }
-
         } else {
           System.out.println("Unknown command or command not available outside a database context.");
         }
@@ -152,34 +183,4 @@ public class FileSystem {
     }
   }
 
-  // Placeholder methods for database operations
-  private static void openDatabase(String dbName) {
-    System.out.println("Opening database: " + dbName);
-    // Implement database opening logic here
-  }
-
-  private static void putFile(String dbName, String fileName) {
-    System.out.println("Putting file into database: " + fileName);
-    // Implement put file logic here
-  }
-
-  private static void getFile(String dbName, String fileName) {
-    System.out.println("Getting file from database: " + fileName);
-    // Implement get file logic here
-  }
-
-  private static void listFiles(String dbName) {
-    System.out.println("Listing files in database.");
-    // Implement file listing logic here
-  }
-
-  private static void findRecord(String dbName, String key) {
-    System.out.println("Finding record with key: " + key);
-    // Implement find record logic here
-  }
-
-  private static void killDatabase(String dbName) {
-    System.out.println("Killing database: " + dbName);
-    // Implement database killing logic here
-  }
 }

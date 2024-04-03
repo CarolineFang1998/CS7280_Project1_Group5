@@ -17,7 +17,7 @@ final class Btree {
 
   /* Size of Node. Mininum is 3. */
 
-  private static final int NODESIZE = 5;
+  private static final int NODESIZE = 11;
 
 
   /* Node array, initialized with length = 1. i.e. root node */
@@ -42,6 +42,18 @@ final class Btree {
 
   /*********** B tree functions for Public ******************/
 
+  public Node[] getNodes() {
+    return this.nodes;
+  }
+
+  public int getCntNodes() {
+    return this.cntNodes;
+  }
+
+  public int getRoot() {
+    return this.root;
+  }
+
   /*
    * Performs a lookup for a value in the B-tree.
    * @param value The value to search for.
@@ -55,11 +67,11 @@ final class Btree {
    * Inserts a value into the B-tree.
    * @param value The value to insert.
    */
-  public void Insert(int value) {
+  public void Insert(KeyPointer value) {
     int result = nodeInsert(value, root);
     if (result == -1) {
         cntValues++; // Value successfully inserted, increment the count of values
-        System.out.println("Insertion complete: " + value + " has been added.");
+//        System.out.println("Insertion complete: " + value + " has been added.");
     } else if (result == -2) {
         System.out.println("Insertion failed: " + value + " already exists.");
     }
@@ -99,12 +111,16 @@ final class Btree {
             // Print all values within the current node
             System.out.print(currentId+"[");
             int count = 0;
-            for (int val : currentNode.values) {    
-              if (count > 0) {
+//            for (int val : currentNode) {    
+          for (KeyPointer node : currentNode.values) {
+            int key = node.getKey();
+            if (count > 0) {
                 System.out.print(",");
               }              
-              if (val != -1) { 
-                System.out.print(val );
+              if (key != -1) {
+                System.out.print(key + " ");
+                System.out.print(node.getPointer() );
+//                System.out.print(node.getKeyPointerStr() );
               } else {
                 System.out.print(" ");
               }
@@ -157,12 +173,12 @@ final class Btree {
     s += "" + pointer;
 
     // Iterate through keys in the node to find the smallest index i such that value <= node.values[i]
-    while (i >= 0 && i < node.size && value > node.values[i]) {
+    while (i >= 0 && i < node.size && value > node.values[i].getKey()) {
         i++;
     }
 
     // If the value matches the key at index i in the node
-    if (i >= 0 && i < node.size && value == node.values[i]) {
+    if (i >= 0 && i < node.size && value == node.values[i].getKey()) {
         System.out.println("Founded " + value + " Path: " + s );
         return true; // The value is found
     }
@@ -226,7 +242,10 @@ final class Btree {
       nodes[parent].values[i] = child.values[promoteIndex];
 
       // Clear the values that were moved to the new node
-      Arrays.fill(child.values, promoteIndex, NODESIZE, -1);
+//      Arrays.fill(child.values, promoteIndex, NODESIZE, -1);
+      for (int j = promoteIndex; j < NODESIZE; j++) {
+        child.values[j] = new KeyPointer(); // Assuming null indicates an empty slot
+      }
 
       // Update the parent node's size
       nodes[parent].size++;
@@ -246,20 +265,20 @@ final class Btree {
    * @param value The value to be inserted.
    * @return -2 if the value already exists, -1 if the insertion is successful.
    */
-  private int insertNonFull(int nodeIndex, int value) {
+  private int insertNonFull(int nodeIndex, KeyPointer value) {
     Node node = nodes[nodeIndex];
     int i = node.size - 1;
 
     // Check if the value already exists 
     for (int j = 0; j < node.size; j++) {
-      if (node.values[j] == value) {
+      if (node.values[j].getKey() == value.getKey()) {
           return -2; // Value already exists
       }
   }
 
     if (isLeaf(node)) { 
         // Insert the value into the correct position in a leaf node
-        while (i >= 0 && value < node.values[i]) {
+        while (i >= 0 && value.getKey() < node.values[i].getKey()) {
             node.values[i + 1] = node.values[i];
             i--;
         }
@@ -269,7 +288,7 @@ final class Btree {
     } 
 
     // Determine the correct child node to descend into
-    while (i >= 0 && value < node.values[i]) {
+    while (i >= 0 && value.getKey() < node.values[i].getKey()) {
       i--;
     }
     i++;
@@ -277,7 +296,7 @@ final class Btree {
     // if the node is full, split the node
     if (nodes[node.children[i]].size == NODESIZE) {
         splitChild(nodeIndex, i, node.children[i]); 
-        if (value > node.values[i]) {
+        if (value.getKey() > node.values[i].getKey()) {
             i++;
         }
     }
@@ -298,7 +317,7 @@ final class Btree {
    * @return -2 if the value already exists in the tree, -1 if the insertion is successful, or
    *         the index of the node if it needs to be split by the caller.
    */
-  private int nodeInsert(int value, int pointer) {
+  private int nodeInsert(KeyPointer value, int pointer) {
     Node currNode = nodes[pointer];
     if (currNode.size == NODESIZE ) { // If current node is full
         if (pointer == root) { // if current node is root
@@ -337,11 +356,16 @@ final class Btree {
    */
   int initNode() {
     Node node = new Node();
-    node.values = new int[NODESIZE];
+//    node.values = new int[NODESIZE];
+    node.values = new KeyPointer[NODESIZE];
     node.children =  new int[NODESIZE + 1];
 
     // init node values and children into -1;
-    Arrays.fill(node.values, -1);
+//    Arrays.fill(node.values, -1);
+    // Initialize node values and children with default KeyPointer objects
+    for (int i = 0; i < NODESIZE; i++) {
+      node.values[i] = new KeyPointer(); // Using default constructor
+    }
     Arrays.fill(node.children, -1);
 
     checkSize();
@@ -369,7 +393,7 @@ final class Btree {
  */
 final class Node {
   /* Node Values (Leaf Values / Key Values for the children nodes).  */
-  int[] values;
+  KeyPointer[] values;
 
   /* Node Array, pointing to the children nodes.
    * This array is not initialized for leaf nodes.
