@@ -17,10 +17,10 @@ NoSQL database is based on Portable File System (PFS).
 
 
 ####.db0 Design
-![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/images/Project2_Design_Part1.png)
+![Alt text](images/Project2_Design_Part1.png)
 
 ###.dbN(excluding .db0) Design
-![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/images/Project2_Design_Part2.png)
+![Alt text](images/Project2_Design_Part2.png)
 
 
 ### Super Block
@@ -155,13 +155,13 @@ test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
 - **Split:**
     - if a node is full, it is split into two nodes. and the middle value (or middle-left for even `NODESIZE`) is promoted to the parent node.
     - According to Introduction to Algorithms(P508), the split operation is as follows:
-![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/images/Splitting.png)
+![Alt text](images/Splitting.png)
    Nodesize is 7, there are 8 pointers and 7 keys. The middle key is 4, and the middle pointer is 5.
    After the split, the middle key is promoted to the parent node, and the middle pointer is the new child node.
 - **Promotion:**
     - When a node is split, the middle value is promoted to the parent node. If the parent node is full, it is split recursively.
     - after the promotion, the new key is inserted to the child node.
-- ![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/images/insert_2.png)
+- ![Alt text](images/insert_2.png)
 - **Summary**
   - insertion order: check if node is full, splitting-promote-insert
   - Split the tree when needed: tree grows in height only when absolutely necessary
