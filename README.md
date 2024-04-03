@@ -1,13 +1,14 @@
 # Key-Value NoSQL Database with Btree Indexing
+This is a course project for CS 7280: Special Topics in Database Management, Project 2. Implement a Key-Value based NoSQL database with a command line interface. Commands include open, put, get, rm, dir, find, kill, and quit.
 
 ## Contributors
 - Yuhan Fang   002194983
 - Luyan Deng   002665782
 
 ## File System Design
-NoSQL database is based on Portable File System (PFS).
+NoSQL database is based on Portable File System (PFS). 
 
-### PFS (i.e., database file):
+#### PFS (i.e., database file):
 - File name: [database_name].db0
     - E.g.: test_group1.db0, test_group1.db1 . . .
 - Initial allocated size is 1,024 Kbytes (i.e., 1 Mbytes). Then, automatically
@@ -15,27 +16,55 @@ NoSQL database is based on Portable File System (PFS).
 - Block based: block size = 256 bytes
 - Block allocation method: Linked allocation
 
-
-####.db0 Design
+### .db0 Design
+.db0 is the first PFS file that our database created. It is stored in our root directory. The initial allocated size is 1,024 Kbytes (i.e., 1 Mbyte). It contains 4,000 blocks (1,024 Kbytes / 256 bytes = 4,000), with each block being 256 bytes.
+Therefore, our block numbers start with 0 and end with 3,999.
+- Block 0-5 will store Head Blocks,
+- The remaining 3994 will be index block or data block.
 ![Alt text](images/Project2_Design_Part1.png)
 
+#### Head blocks
+It stored all the head blocks(include bitmap, super block metadata and FCBs).
+- Block 0-3 will store Head Block
+- block 4 will store SuperBlock
+- block 5 will store FCBs block
+
+![Alt text](images/headblock.png)
+
+##### Bit Map
+Hexadecimal bitmap for the free block list: '1' indicates a used block, and '0' indicates a free block. '0' -> '0000', 'F' -> '1111'. Each .db file contains one bitmap in the first 4 blocks.
+- 1 byte could represent 4 blocks
+- one 256 block could represent: 4 * 256 = 1024 blocks
+- 4000/ 1024 = 4  bit map takes 4 blocks for each .db file.
+![Alt text](images/bitmap.png)
+
+##### Super Block
+The super block contains all the metadata of the database and is only contained in .db0. It includes the database name, the number of FCB files, the number of PFS files, and the block size. This information is stored only in .db0.
+![Alt text](images/superblock.png)
+
+##### FCBs(File control block)
+Each FCB contains name, time, # of blocks, the block pointer for data block start pointer, and a block pointer for the index block root pointer. 
+- Each FCB takes 58 bytes
+- Each block could contain 4 FCB metadata.
+- If 1 FCBs block is full, we could always find another empty block to store more information.
+![Alt text](images/fcb.png)
+
+
+#### Index Blocks
+The index block uses a B-tree index. Each block can contain 11 records (in KeyPointer format) and 12 child node pointers (in BlockPointer format). Each KeyPointer contains one key and one data block pointer, which indicates where the data is stored. Each child node pointer for the index block is a block pointer, indicating which block stores the next node. If a node has no child, the child node pointer will be set to "9999999".
+![Alt text](images/indexblock.png)
+
+#### Data Blocks
+The key is an integer, and the value is truncated to 40 bytes per record. Each block can store 6 records (40 bytes each) and 1 block pointer (7 bytes) at the end.
+
+For each record, we store the key and value as characters. We are using linked allocation, so the block pointer points to the next contiguous block. If it reaches the end of the data block, the block pointer will be "9999999".
+![Alt text](images/datablock.png)
+
+
 ###.dbN(excluding .db0) Design
-![Alt text](images/Project2_Design_Part2.png)
+When the .db0 file is full, our database will create a new .db file to store more data. Subsequent .dbN files (.db1, .db2, etc.) store the bitmap in the first 4 blocks. The remaining blocks will be either index blocks or data blocks.
 
-
-### Super Block
-Super block contains all the metadeta of the Database and will only contains in .db0.
-
-### Free Block List
-bit map for free block list.
-
-### Data Blocks
-Key is integer and Value of truncked to 40 bytes per record.
-
-### Index Blocks
-B tree index.
-
-
+<img src="images/Project2_Design_Part2.png" width="200" height="" alt="Project 2 Design Part 1">
 
 
 
