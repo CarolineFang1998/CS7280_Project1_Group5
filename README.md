@@ -1,19 +1,105 @@
-
-
-# Indexing Structure for NoSQL database
-
-This Java project implements a B-tree data structure for NoSQL database, offering efficient algorithms for insertion, 
-lookup, and display operations. 
+# Key-Value NoSQL Database with Btree Indexing
 
 ## Contributors
 - Yuhan Fang   002194983
-- Luyan Deng     002665782
-## How to Run the Code
+- Luyan Deng   002665782
+
+## File System Design
+NoSQL database is based on Portable File System (PFS).
+
+### PFS (i.e., database file):
+- File name: [database_name].db0
+    - E.g.: test_group1.db0, test_group1.db1 . . .
+- Initial allocated size is 1,024 Kbytes (i.e., 1 Mbytes). Then, automatically
+  increased by 1,024 Kbytes if needed (i.e., in case of full).
+- Block based: block size = 256 bytes
+- Block allocation method: Linked allocation
+
+
+####.db0 Design
+![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/images/Project2_Design_Part1.png)
+
+###.dbN(excluding .db0) Design
+![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/images/Project2_Design_Part2.png)
+
+
+### Super Block
+Super block contains all the metadeta of the Database and will only contains in .db0.
+
+### Free Block List
+bit map for free block list.
+
+### Data Blocks
+Key is integer and Value of truncked to 40 bytes per record.
+
+### Index Blocks
+B tree index.
+
+
+
+
+
+### How to Start this Program
+Compile and run our program by typing this command
+```shell
+sh start.sh
+```
+
+### Commends
+All the uploaded CSV file should store in ./csvs, and case is sensitive.
+
+
+
+#### Open a database
+```shell
+open <DatabaseName>
+```
+
+### Exit NoSQL database
+```shell
+quit
+```
+
+#### Delete the NoSQL database
+```shell
+kill <Filename>.csv
+```
+
+### While you open a database
+#### Insert csv file from your os to your NoSQL database
+```shell
+put <Filename>.csv
+```
+
+#### Download a csv file from your NoSQL database
+```shell
+get <Filename>.csv
+```
+
+#### Delete csv file from your NoSQL database
+```shell
+rm <Filename>.csv
+```
+
+#### List all data files in your NoSQL database
+```shell
+dir
+```
+
+
+
+
+
+## Indexing Structure for NoSQL database
+This Java project implements  B-tree data structure for NoSQL database, offering efficient algorithms for insertion, lookup, and display operations.
+
+
+### How to Run the Btree Code
 
 1. **Compilation:** Compile the Java files in your development environment or using a command line, e.g., `javac Btree.java BtreeTest.java`.
 2. **Execution:** Run the compiled `BtreeTest` class to execute predefined tests, e.g., `java BtreeTest`.
 
-## Running Tests
+### Btree Running Tests
 
 The `BtreeTest` class includes a `main` method that executes multiple predefined test cases. Uncomment any test case in the `main` method to run it:
 
@@ -22,7 +108,7 @@ The `BtreeTest` class includes a `main` method that executes multiple predefined
 test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
 ```
 
-## Reason to choose B-tree 
+### Reason to choose B-tree 
 
 - High Fanout and Efficient Disk Access: 
    B-trees has a high branching factor. Each node can contain a large number of keys. This reduces the number of levels
@@ -38,7 +124,7 @@ test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
    B-tree is widely used in database and file systems. It is used to store large amount of data and is 
    scalable to store even more data.
 
-## Assumptions
+### Assumptions
 - **Unique Keys:** This implementation assumes that all keys are unique. Duplicate keys are not allowed.
 - **Integer Data Type:** This implementation is designed for integer values.
 - **NODESIZE Configuration:** `NODESIZE` is a fixed value determining the maximum number of values a node can hold.
@@ -48,14 +134,14 @@ test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
 - **Balanced Tree:** B-tree is self balanced
 
    
-## Functions:
+### B-tree Functions:
   This project includes the following functions:
 
   - **Lookup (int keyValue)**: find the specified value. If the value exists, returning value is True.
   - **Insert (int keyValue)**: insert the specified value.
   - **Display (int node)**: print out the indexing tree structure under specified node.
 
-## Algorithm Overview
+### Algorithm Overview
 - **Lookup:**
     - Begins at the root and traverses down the tree comparing the target value with the values in each node until it finds the target or reaches a leaf node.
     - if not a leaf node, it will continue to search in the child node.
@@ -69,13 +155,13 @@ test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
 - **Split:**
     - if a node is full, it is split into two nodes. and the middle value (or middle-left for even `NODESIZE`) is promoted to the parent node.
     - According to Introduction to Algorithms(P508), the split operation is as follows:
-![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/Splitting.png)
+![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/images/Splitting.png)
    Nodesize is 7, there are 8 pointers and 7 keys. The middle key is 4, and the middle pointer is 5.
    After the split, the middle key is promoted to the parent node, and the middle pointer is the new child node.
 - **Promotion:**
     - When a node is split, the middle value is promoted to the parent node. If the parent node is full, it is split recursively.
     - after the promotion, the new key is inserted to the child node.
-- ![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/insert_2.png)
+- ![Alt text](https://github.com/CarolineFang1998/CS7280_Project1_Group5/blob/master/images/insert_2.png)
 - **Summary**
   - insertion order: check if node is full, splitting-promote-insert
   - Split the tree when needed: tree grows in height only when absolutely necessary
@@ -85,17 +171,17 @@ test(new int[] {29,41,44,62,46,49,27,76,91,30,100,47,34,53,9,45});
   - Able to deal with both odd and even NODESIZE
   
     
-## Limitations
+### Limitations
 - **Data Type:** This implementation is designed for integer values. Modifying the data type requires changes to the `Btree` class.
 - **NODESIZE Configuration:** `NODESIZE` is a fixed value determining the maximum number of values a node can hold. This implementation may require manual adjustment of `NODESIZE` based on specific needs.
 - **Large Datasets:** While B-trees are efficient for large datasets, extremely large datasets may require optimizations not covered in this basic implementation.
 - **Concurrency:** This implementation does not include concurrency controls for multi-threaded scenarios.
 
-## Customization
+### Customization
 
 To customize `NODESIZE` or implement additional features, modify the `Btree` class accordingly. Ensure any changes maintain the B-tree properties to ensure performance and correctness.
 
-## References
+### B-tree References
 
 Introduction to Algorithms,4th Edition(Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein),MIT Press,2009
 https://dl.ebooksworld.ir/books/Introduction.to.Algorithms.4th.Leiserson.Stein.Rivest.Cormen.MIT.Press.9780262046305.EBooksWorld.ir.pdf
