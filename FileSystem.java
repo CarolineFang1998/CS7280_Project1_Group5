@@ -216,7 +216,7 @@ public class FileSystem {
               continue;
             }
 
-            // todo: implement find
+
             String pointer = currentDatabase.search(key);
             if (pointer == null) {
 
@@ -259,14 +259,14 @@ public class FileSystem {
               pfs.removeElements(fcbBlock, fcbIndex);
 
 
-//              currentDatabase.getFirstPFS().removeFCBFromBlock(currentDatabase.getFirstPFS().getContent()[5], FCBName,
-//                      existingMetadataCount);
+//
               currentDatabase.deleteOneFCBFile();
               currentDatabase.getFirstPFS().updateSuperBlock();
               // remove from fcb list
               currentDatabase.removeFCB(FCBName);
               System.out.println("FCB content after removal:");
               System.out.println(fcbBlock);
+              pfs.updateFCBBlock(5, fcbBlock);
 
 
 

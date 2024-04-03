@@ -218,13 +218,13 @@ final class Btree {
       if (i < node.size && value == node.values[i].getKey()) {
           // If the value matches the key at index i in the node
 //          System.out.println("Found " + value +  s + " after accessing " + accessedBlocks + " blocks");
-          System.out.println("# of Blocks =" + accessedBlocks);
+//          System.out.println("# of Blocks =" + accessedBlocks);
           return new SearchResult(node.values[i], accessedBlocks, true); // The value is found
       }
 
       if (isLeaf(node)) {
           // If the node is a leaf, then the search is unsuccessful
-          System.out.println("No key found after accessing " + accessedBlocks + " blocks");
+//          System.out.println("No key found after accessing " + accessedBlocks + " blocks");
           return new SearchResult(null, accessedBlocks, false);
       } else {
           s += " -> " ;
@@ -457,5 +457,8 @@ class SearchResult {
         this.keyPointer= keyPointer;
         this.blockAccesses = blockAccesses;
         this.found = found;
+    }
+    public int getBlockAccesses() {
+        return blockAccesses;
     }
 }

@@ -1102,11 +1102,36 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
       }
     }
 
-    // Optional: Fill the end of the array with a default value if desired
-    for (int i = block.length - LENGTH_TO_REMOVE; i < block.length; i++) {
-      block[i] = '\0'; // Assuming you want to clear the shifted elements
-    }
+//    // Optional: Fill the end of the array with a default value if desired
+//    for (int i = block.length - LENGTH_TO_REMOVE; i < block.length; i++) {
+//      block[i] = '\0'; // Assuming you want to clear the shifted elements
+//    }
   }
+  //TODO: update the FCB block in the PFS file
+   //write updated block to the file
+    public void updateFCBBlock(int blockNum, char[] updatedBlock) {
+      if (blockNum < 0 || blockNum >= 4000) {
+        System.out.println("Invalid block number, please input from 0 to 3999");
+        return;
+      }
+
+      if (updatedBlock.length != 256) {
+        System.out.println("Invalid block content, please input char length 256");
+        return;
+      }
+
+      this.content[blockNum] = updatedBlock;
+    }
+    // write this.content to the file
+    public void writeContentToFile() {
+      try {
+        writeCharArrayToFile();
+        System.out.println("File written successfully.");
+      } catch (IOException e) {
+        System.err.println("An error occurred while writing the file: " + e.getMessage());
+      }
+    }
+  //TODO: iterate the entire tree and when find FCB block, update the bitmap from 1 to 0
 
 }
 

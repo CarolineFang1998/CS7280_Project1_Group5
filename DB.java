@@ -545,8 +545,9 @@ public class DB {
           //  get the pointer from the btree, and print out the key's record
 //            System.out.println("Key found.");
 //            System.out.println(result.keyPointer.getKeyPointerStr());
-
-
+          // total block accessed = block accessed in btree + one headerblock
+            int totalBlocksAccessed = result.getBlockAccesses()+1;
+            System.out.println("# of Blocks = " + totalBlocksAccessed);
             //return the data block pointer
             return result.keyPointer.getPointer();
 
