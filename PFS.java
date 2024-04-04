@@ -1,4 +1,6 @@
 import java.io.*;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -30,22 +32,23 @@ public class PFS {
    * @param PFSNumber The sequence number for this PFS file. Start with 0
    */
   public PFS(DB db, int PFSNumber) {
-    System.out.println("creating PFS .db" + PFSNumber + "...");
     this.db = db;
     this.sequenceNumber = PFSNumber; // if .db0, sequenceNumber = 0
     this.content = new char[4000][db.getBlockSize()]; // first block is always bitmap
     this.fileName = db.getName() + ".db" + PFSNumber;
 //    this.keyPointerList = new ArrayList<>();
 
+    System.out.println("db.getNumOfPFSFiles() " + db.getNumOfPFSFiles());
     // check if this file is already exist
     if (db.getNumOfPFSFiles() >= sequenceNumber + 1) {
+      System.out.println("loading PFSNumber == " + PFSNumber);
+      loadExistingPFS(); // update the current content[][] 2d array
+
       this.blockLeft = this.calculateBlocksLeft();
-      this.content = loadExistingPFS();
-      // TODO: load existing PFS
     } else {
       this.blockLeft = 4000;
       if (this.sequenceNumber == 0) {
-        System.out.println("PFSNumber == 0");
+        System.out.println("creating PFSNumber == 0");
         // init the .db0 with write all the superblock info & BitMap(with first 3 blocks full),
         // leave 1 block for FCB block
         // write this into .db0 file
@@ -53,7 +56,7 @@ public class PFS {
         System.out.println("Number of FCB Files out: " + this.db.getNumOfFCBFiles());
         System.out.println("blockLeft: " + this.blockLeft);
       } else {
-        System.out.println("PFSNumber == " + PFSNumber);
+        System.out.println("creating PFSNumber == " + PFSNumber);
         // only create a .dbN file and init bitmap
         // write this into .dbN file
         initMorePFS();
@@ -70,6 +73,29 @@ public class PFS {
     } catch (IOException e) {
       System.err.println("An error occurred while writing the file: " + e.getMessage());
     }
+  }
+
+  public int   loadExistingFCB(List<FCB> fcbList) {
+    int size = 0;
+    if(this.sequenceNumber == 0) {
+      for(int i=0; i<4; i++) {
+        int fcbLength = 58;
+        String temp = new String(this.content[5], i*fcbLength, fcbLength);
+        System.out.println("i " + i);
+
+        System.out.println("temp:");
+        System.out.println(new String(this.content[5], i * fcbLength, fcbLength));
+//        System.out.println(new String(temp));
+        FCB fcb = new FCB(temp.toCharArray());
+        if(fcb.getName() != "") {
+          size++;
+          System.out.println("size++");
+        }
+        fcbList.add(fcb);
+        fcb.toStringValue();
+      }
+    }
+    return size;
   }
 
 
@@ -413,14 +439,14 @@ public class PFS {
    * This includes the FCB name, creation or modification time, size, and pointers to data and index blocks.
    *
    * @param FCBName           Name of the FCB.
-   * @param time              Timestamp for the FCB, typically creation or modification time.
+   * @param formattedTime              Timestamp for the FCB, typically creation or modification time.
    * @param size              Size of the FCB, often reflecting the size of the data it controls.
    * @param dataBlockStart    Pointer to the start of the data block for this FCB.
    * @param indexStartPointer Pointer to the start of the index block for this FCB.
    */
-  public void updateFCBMetadeta(String FCBName, LocalDateTime time, int size,
+  public void updateFCBMetadeta(String FCBName, String formattedTime, int size,
                                 String dataBlockStart, String indexStartPointer) {
-    char[] metadata = generateFCBMetadata(FCBName, time, size, dataBlockStart, indexStartPointer);
+    char[] metadata = generateFCBMetadata(FCBName, formattedTime, size, dataBlockStart, indexStartPointer);
 //    System.arraycopy(metadeta, 0, this.content[5], 0, metadeta.length);
     int existingMetadataCount= this.db.getNumOfFCBFiles();
     if (existingMetadataCount < 4) {
@@ -497,13 +523,13 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
    * timestamp, size, and pointers to its data and index blocks.
    *
    * @param FCBName           Name of the FCB.
-   * @param time              Timestamp for the FCB, typically creation or modification time.
+   * @param formattedTime              Timestamp for the FCB, typically creation or modification time.
    * @param size              Size of the FCB, often reflecting the size of the data it controls.
    * @param dataBlockStart    Pointer to the start of the data block for this FCB.
    * @param indexStartPointer Pointer to the start of the index block for this FCB.
    * @return A char array containing the formatted FCB metadata.
    */
-  public char[] generateFCBMetadata(String FCBName, LocalDateTime time, int size,
+  public char[] generateFCBMetadata(String FCBName, String formattedTime, int size,
                                     String dataBlockStart, String indexStartPointer) {
 
     // Ensure the FCBName fits into 20 bytes, truncating if necessary
@@ -515,10 +541,6 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
         FCBName += " ";
       }
     }
-
-    // Format the time into a 14-byte string
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MMM/yy:HHa");
-    String formattedTime = time.format(formatter);
 
     // Convert the size to a String and ensure it is exactly 10 bytes
     String sizeStr = String.valueOf(size);
@@ -661,11 +683,6 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
   }
 
 
-  // TODO: load Existings PFS, return the char[][]
-
-  // char[][] loadExistingPFS()
-
-
   /**
    * Writes the current state of the `content` 2D char array to the associated .db file. This method is used to persist
    * changes made to the PFS structure, including updates to metadata, data blocks, and the bitmap.
@@ -698,56 +715,47 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
 
 
 
+  // Todo: change to no change line
   /**
    * Load the content of the PFS file into the 2D char array, considering the special structure of .db0.
    */
-  public char[][] loadExistingPFS() {
+  public void loadExistingPFS() {
     try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
-      if (sequenceNumber == 0) {
-        // Special handling for .db0
-        return loadDb0(reader);
-      } else {
-        // General handling for .db1, .db2, etc.
-        return loadDbN(reader);
+      int rowIndex = 0; // Start directly after FCB block
+      while (rowIndex < 4000) {
+        String line = reader.readLine();
+        for (int colIndex = 0; colIndex < line.length() && colIndex < 256; colIndex++) {
+          content[rowIndex][colIndex] = line.charAt(colIndex);
+//          System.out.print(content[rowIndex][colIndex]);
+        }
+//        System.out.println();
+        rowIndex++;
       }
     } catch (IOException e) {
       System.err.println("An error occurred while loading PFS file: " + e.getMessage());
       throw new RuntimeException("Failed to load PFS file.");
     }
-  }
-  /*
-      * Loads the content of the PFS file into the 2D char array, considering the special structure of .db0.
-      * This method is used to handle the specific structure of the .db0 file, including the bitmap, superblock, and FCB.
-      * @param reader The BufferedReader object used to read the file.
-      * @return The 2D char array containing the loaded content.
-   */
-  private char[][] loadDb0(BufferedReader reader) throws IOException {
-    // Specific logic to handle .db0 file
-    // This could involve processing the bitmap,  superblock and FCB specifically
-    // Then loading the rest of the blocks as usual
 
-
-    readBitmap(reader);
-    readSuperBlock(reader);
-    readFCBs(reader);
-    // Continue reading the rest of the blocks
-    readBlocks(reader);
-    return content;
+    writeContentToFile();
   }
-  /*
-    loads the content of the PFS file into the 2D char array, considering the general structure of .db1, .db2, etc.
-    @param reader The BufferedReader object used to read the file.
-    @return The 2D char array containing the loaded content.
-   */
-  private char[][] loadDbN(BufferedReader reader) throws IOException {
-    // General logic to handle files other than .db0
-    // this could just involve loading the bitmap and then the rest of the blocks
 
-    readBitmap(reader);
-    // Continue reading the rest of the blocks
-    readBlocks(reader);
-    return content;
-  }
+//  public void loadExistingPFS() {
+//    try (RandomAccessFile file = new RandomAccessFile(fileName, "r")) {
+//      long fileSize = file.length();
+//      int numLines = (int) (fileSize / 256); // Assuming each line is 256 characters long
+//
+//      // Adjust the loop to iterate only over the actual number of lines
+//      for (int i = 0; i < numLines; i++) {
+//        for (int j = 0; j < 256; j++) {
+//          content[i][j] = (char) file.readByte();
+//        }
+//      }
+//    } catch (IOException e) {
+//      System.err.println("An error occurred while loading PFS file: " + e.getMessage());
+//      throw new RuntimeException("Failed to load PFS file.");
+//    }
+//  }
+
 
   /*
     * Reads the bitmap section of the PFS file.
@@ -1143,6 +1151,8 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
 
       this.content[blockNum] = updatedBlock;
     }
+
+
     // write this.content to the file
     public void writeContentToFile() {
       try {

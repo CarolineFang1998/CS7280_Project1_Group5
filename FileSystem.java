@@ -195,77 +195,8 @@ public class FileSystem {
             continue;
           }
           currentDatabase.showPFSFCBMetadata();
-//
-        } else if ("show".equalsIgnoreCase(command)) {
-//          currentDatabase.showPFSFCBMetadata();
-          currentDatabase.showPFSContent();
-//        } else if ("t".equalsIgnoreCase(command)) {
-////          currentDatabase.showPFSFCBMetadata();
-//          if (commandParts.length > 1) {
-//            String FCBName = commandParts[1]; //"movies-small.csv"
-//            // find the fcb
-//            if (currentDatabase.findFCBByName(FCBName) == null) {
-//              System.out.println("FCB file not found.");
-//              continue;
-//            }
-//            FCB fcb = currentDatabase.findFCBByName(FCBName);
-////            String startPointer = fcb.getDataStartBlock();
-////            int startPointerInt = Integer.parseInt(startPointer);
-//            String indexBlock = fcb.getIndexStartBlock();
-//            int indexBlockInt = Integer.parseInt(indexBlock);
-//            currentDatabase.traverseAndUpdateBitmap(indexBlockInt);
-//
-//
-//          } else {
-//            System.out.println("Missing filename for 't' command.");
-//          }
-
-        } else if ("tree".equalsIgnoreCase(command)) { // given a fcb name, show the btree
-          if (commandParts.length > 1) {
-            String name = commandParts[1];
-            currentDatabase.getBtree(name);
-          } else {
-            System.out.println("Missing filename for 'tree' command.");
-          }
-
-//
         } else if ("find".equalsIgnoreCase(command)) {
-          if (commandParts.length > 1) {
-            String nameandkey = commandParts[1]; //"movies-small.csv.100"
-            // split the name and key
-            // name = movies-small.csv
-            String name = nameandkey.split("\\.")[0] + "." + nameandkey.split("\\.")[1]; //name = movies-small.csv
-            int key = Integer.parseInt(nameandkey.split("\\.")[2]); //key = 100
-            // find the fcb
-            if (currentDatabase.findFCBByName(name) == null) {
-              System.out.println("FCB file not found.");
-              continue;
-            }
-            FCB fcb = currentDatabase.findFCBByName(name);
-            // find the btree
-            Btree bTree = currentDatabase.getBtree(name);
-            bTree.DisplayEntileBTree();
-//            // print key and pointer
-//            System.out.println(currentDatabase.getKeyPointerList(name));
 
-
-            //name = movies-small
-            String FCBName = name.split("\\.")[0];
-            String pointer = currentDatabase.search(key, name);
-            if (pointer == null) {
-
-              continue;
-            }
-            DataBlockPointer dataBlockPointer = new DataBlockPointer(pointer);
-            String record = currentDatabase.getRecordbyDataBlockPointer(dataBlockPointer.getPfsNumber(),
-                    dataBlockPointer.getBlockNumber(), dataBlockPointer.getRecordNumber());
-
-            System.out.println("Record found: " + record);
-
-
-          } else {
-            System.out.println("Missing key for 'find' command.");
-          }
         } else if ("rm".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
             String FCBName = commandParts[1]; //"movies-small.csv"

@@ -1,10 +1,15 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.security.Key;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Represents a database, handling the creation and management of PFS files
@@ -30,7 +35,7 @@ public class DB {
    * @param isLoad Indicates whether to load an existing database (true) or create a new one (false).
    */
   public DB(String name, int blockSize, boolean isLoad) {
-    System.out.println("creating DB " + name);
+
     this.name = name;
     this.blockSize = blockSize;
     this.pfsList = new ArrayList<>();
@@ -39,20 +44,54 @@ public class DB {
     this.filenameToBtreeMap = new HashMap<>();
     this.keyPointerMap = new HashMap<>();
     if (!isLoad) {
+      System.out.println("creating DB " + name);
       init();
     } else {
+      System.out.println("loading DB " + name);
       // todo, load the previous pfs files
-      for (PFS file : pfsList) {
-        file.loadExistingPFS();
-        // need to create a pfs first
-        // todo: load the fcb lists
-//        for (FCB fcb : fcbList) {
-//          fcb.loadExistingFCB();
-//
-//        }
+      loadExistingPFSs();
+      System.out.println("loading PFS size" + numOfPFSFiles);
+      // need to create a pfs first
+      // todo: load the fcb lists
+      this.numOfFCBFiles = this.pfsList.get(0).loadExistingFCB(this.fcbList);
+      System.out.println("loading fcb size" + numOfFCBFiles);
 
-      }
     }
+  }
+
+
+  public void loadExistingPFSs() {
+    // find fcbs in the current dir and count how many of them
+    this.numOfPFSFiles = countPFSFiles();
+    System.out.println("counting numOfPFSFiles " + numOfPFSFiles);
+    for(int i=0; i < this.numOfPFSFiles; i++) {
+      PFS pfs = new PFS(this, i);
+      this.pfsList.add(pfs);
+    }
+  }
+
+  /**
+   * Counts files in the current directory that start with the value of this.name and end with ".db" followed by a number.
+   *
+   * @return The count of matching files.
+   */
+  public int countPFSFiles() {
+    Path currentDirectory = Paths.get("");
+    // Dynamically insert this.name into the regex pattern
+    final Pattern pattern = Pattern.compile("^" + Pattern.quote(this.name) + ".*\\.db\\d+$");
+    final int[] count = {0}; // Use an array to allow modification inside the lambda
+
+    try (Stream<Path> files = Files.list(currentDirectory)) {
+      count[0] = (int) files
+              .map(Path::getFileName)
+              .map(Path::toString)
+              .filter(fileName -> pattern.matcher(fileName).matches())
+              .count();
+    } catch (IOException e) {
+      System.err.println("An error occurred while listing files: " + e.getMessage());
+    }
+
+    return count[0];
   }
 
   /**
@@ -220,13 +259,16 @@ public class DB {
     // Replace all the pointer to corresponding String
     String indexRootPtr = storeIndexToEmptyBlocks(emptyBlocks, btree);
 
-    // todo: implement the fcb metadata class
+    // todo: implement the fcb metadata class and dynamically update
     // FCB name: 20 char, time: 14 char (sample:  "15/SEP/23:25PM")
     // number of blocks 10 int.  data start block(7 char): default: 9999999,
     // index start block(7 char): default: 9999999,
-    pfsList.get(0).updateFCBMetadeta(fileName, LocalDateTime.now(),
+    LocalDateTime time = LocalDateTime.now();
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MMM/yy:HHa");
+    String formattedTime = time.format(formatter);
+    pfsList.get(0).updateFCBMetadeta(fileName, formattedTime,
             blocksSize + btree.getCntNodes(), dataStartPtr, indexRootPtr);
-    FCB newFCB = new FCB(fileName, LocalDateTime.now(), blocksSize + btree.getCntNodes(), dataStartPtr, indexRootPtr);
+    FCB newFCB = new FCB(fileName, formattedTime, blocksSize + btree.getCntNodes(), dataStartPtr, indexRootPtr);
     fcbList.add(newFCB);
 
     System.out.println("empty space" + pfsList.get(0).getBlockLeft());
@@ -534,21 +576,12 @@ public class DB {
 
   // show PFS'S fcb metadata
   public void showPFSFCBMetadata() {
-//        pfsList.get(0).showFCBContent();
     for(FCB fcb: fcbList) {
-
-      fcb.showContent();
+      if(fcb.getName() != "") {
+        fcb.showContent();
+      }
     }
   }
-  //show pfs this.content
-  public void showPFSContent() {
-    for(PFS pfs: pfsList) {
-      pfs.showContent();
-    }
-  }
-//  public Btree getBtree() {
-//    return btree;
-//  }
 
   /**
    * Searches for a key in a B-tree and returns the associated data block pointer if the key is found.

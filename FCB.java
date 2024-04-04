@@ -1,16 +1,13 @@
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 public class FCB {
     private String name; // FCB name, limited to 20 characters
-//    private String time; // Timestamp, formatted as "15/SEP/23:25PM", limited to 14 characters
-    private LocalDateTime time; // Timestamp, formatted as "15/SEP/23:25PM", limited to 14 characters
+    private String time; // Timestamp, formatted as "15/SEP/23:25PM", limited to 14 characters
     private int size; // Number of blocks, assumed to be an integer
     private String dataStartBlock; // Pointer to data start block, 7 characters, default "9999999"
     private String indexStartBlock; // Pointer to index start block, 7 characters, default "9999999"
 
     // Constructor
-    public FCB(String name, LocalDateTime time, int size) {
+    public FCB(String name, String time, int size) {
         this.name = name.length() > 20 ? name.substring(0, 20) : name;
         this.time = time;
         this.size = size;
@@ -19,19 +16,63 @@ public class FCB {
     }
 
     // Additional constructor to specify all fields
-    public FCB(String name, LocalDateTime time, int size, String dataStartBlock, String indexStartBlock) {
+    public FCB(String name, String time, int size, String dataStartBlock, String indexStartBlock) {
         this(name, time, size); // Reuse the first constructor for common initializations
         this.dataStartBlock = dataStartBlock.length() == 7 ? dataStartBlock : "9999999";
         this.indexStartBlock = indexStartBlock.length() == 7 ? indexStartBlock : "9999999";
     }
 
+    // Additional constructor to specify all fields
+    public FCB(char[] fcbContent) {
+        // Ensure that fcbContent has the correct length
+        if (fcbContent.length != 58) {
+            throw new IllegalArgumentException("FCB content should be exactly 58 characters long.");
+        }
+
+        // Name: First 20 characters, trim whitespace
+        this.name = new String(fcbContent, 0, 20).trim();
+        System.out.println("name " + name);
+
+        //if this is empty or deleted
+        if (name == "") {
+            // this block is empty
+            this.name = "";
+            this.time = "";
+            this.size = 0;
+            this.dataStartBlock = ""; // Default value
+            this.indexStartBlock = ""; // Default value
+            return;
+        }
+
+        // Time: Characters 20 to 33, parse to LocalDateTime
+        this.time = new String(fcbContent, 20, 14);
+        System.out.println("time " + time);
+
+        // Size: Characters 34 to 43, parse to int
+        System.out.println("sizeStr " + new String(fcbContent, 34, 10).trim());
+        String sizeStr = new String(fcbContent, 34, 10).trim();
+
+        try {
+            this.size = Integer.parseInt(sizeStr);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid size format. Expected an integer.");
+        }
+
+        // Data start block: Characters 44 to 50
+        this.dataStartBlock = new String(fcbContent, 44, 7);
+        System.out.println("dataStartBlock " + dataStartBlock);
+
+        // Index start block: Characters 50 to 57
+        this.indexStartBlock = new String(fcbContent, 50, 7);
+        System.out.println("indexStartBlock " + indexStartBlock);
+    }
+
+
     // Getters and Setters
     public String getName() {
         return name;
     }
-    public String getTime() {
-        return time.format(DateTimeFormatter.ofPattern("dd/MMM/HH:mma"));
-    }
+    public String getTime() {return time;}
     public int getSize() {
         return size;
     }
@@ -44,10 +85,10 @@ public class FCB {
 
 
     public void showContent() {
-        System.out.println(name+" "+time.format(DateTimeFormatter.ofPattern("dd/MMM/HH:mma"))+" "+size*256+" Bytes");
-
-
+        System.out.println(name+" "+time+" "+size*256+" Bytes");
     }
 
-
+    public void toStringValue() {
+        System.out.println(name+" "+time+" "+size+" " + this.dataStartBlock +" "+ this.indexStartBlock);
+    }
 }
