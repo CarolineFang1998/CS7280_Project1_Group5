@@ -644,12 +644,117 @@ public class DB implements Serializable {
 
     }
 
+  public Queue<Integer> clean(FCB fcb) {
+    String indexStartBlock = fcb.getIndexStartBlock();
+    int indexStartBlockNumber = Integer.parseInt(indexStartBlock);
+    Queue<Integer> queue = processRowForBlockPointers(indexStartBlockNumber);
+
+
+//    // clean the data block
+    while (!queue.isEmpty()) {
+      int currentBlockNumber = queue.poll();
+      pfsList.get(0).updateBitMap(currentBlockNumber, false);
+      // overwrite the block with empty char array
+      Arrays.fill(pfsList.get(0).getContent()[currentBlockNumber], ' ');
+
+    }
+
+
+    return queue;
+
+  }
+
+  public Queue<Integer> processRowForBlockPointers(int blockNumber) {
+    char[][] content = pfsList.get(0).getContent();
+    Queue<Integer> blockPointersQueue = new LinkedList<>();
+    blockPointersQueue.add(blockNumber);
+    final int BLOCK_POINTER_SIZE = 7; // Size of block pointer
+    final int KEY_POINTER_SIZE = 15; // Size of key pointer
+    final String TERMINATOR = "9999999";
+
+    // Extract the row from content based on rowIndex
+    char[] row = content[blockNumber];
+
+    // Initialize the starting index for block pointer extraction
+    int index = 0;
+
+    // Loop through the row, extracting block pointers and key pointers alternately
+    while (index < row.length) {
+      // Extract the block pointer
+      String blockPointerStr = new String(row, index, BLOCK_POINTER_SIZE);
+
+      // Check if the block pointer is the terminator
+      if (!TERMINATOR.equals(blockPointerStr)) {
+        try {
+          // Parse the block pointer and add to the queue if not the terminator
+          int blockPointer = Integer.parseInt(blockPointerStr);
+          blockPointersQueue.add(blockPointer);
+        } catch (NumberFormatException e) {
+//          System.err.println("Invalid block pointer encountered: " + blockPointerStr);
+        }
+      }
+
+      // Move the index to skip over the next key pointer
+      index += BLOCK_POINTER_SIZE + KEY_POINTER_SIZE;
+
+      // If the next position exceeds the row's length, break the loop
+      if (index >= row.length) break;
+
+      // Check if the remaining characters are less than a block pointer size
+      // This can happen if the row's data structure is not strictly followed
+      if (row.length - index < BLOCK_POINTER_SIZE) {
+        System.err.println("Incomplete block pointer at the end of the row.");
+        break;
+      }
+    }
+    System.out.println("blockPointersQueue: " + blockPointersQueue);
+    return blockPointersQueue;
+  }
+
+
+
     // free index block given fcb
     // read pfslist, find the index block, traverse the index block, free the data block
       public void freeIndexBlock(FCB fcb) {
         String indexStartBlock = fcb.getIndexStartBlock();
         int indexStartBlockNumber = Integer.parseInt(indexStartBlock);
         Queue<Integer> queue = new LinkedList<>();
+        queue.add(indexStartBlockNumber);
+        // traverse the index block from pfsList.get(0).getContent()[indexStartBlockNumber]
+        // content[IndexStartBlockNumber] is the root
+        // content[IndexStartBlockNumber][0-6] is the key, [7-14] is the pointer
+        // if content[IndexStartBlockNumber][0-6] == '9999999', then don't add to queue
+        // then skip content[IndexStartBlockNumber][7-14] to get the next block pointer
+        // one block has 10 keyPointer, each keyPointer has 15 char
+        // one block has 11 blockPointer, each blockPointer has 7 char
+
+        while (!queue.isEmpty()) {
+          int currentBlockNumber = queue.poll();
+          char[][] content = pfsList.get(0).getContent();
+          for (int i = 0; i < content[currentBlockNumber].length; i++) {
+            String blockpointer = new String(content[currentBlockNumber], i, 7);
+            if (blockpointer.equals("9999999")) {
+              continue;
+            }
+            try {
+              int childPointer = Integer.parseInt(blockpointer);
+              queue.add(childPointer);
+            } catch (NumberFormatException e) {
+              System.out.println("blockpointer is not a number");
+            }
+
+            // skip next 15 char
+
+            // skip from i = 7 to i = 14 start from i = 15
+            i += 16;
+
+            // free the data block
+          }
+          // print out the queue
+          System.out.println("queue" + queue);
+          // free the index block
+//          pfsList.get(0).updateBitMap(currentBlockNumber, false);
+        }
 
         // only deal with the first pfs file
 
