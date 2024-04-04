@@ -265,7 +265,9 @@ public class FileSystem {
 //            currentDatabase.getFirstPFS().showIndexBlockByFCB(fcb);
 //            currentDatabase.getFirstPFS().removeDataBlock(fcb);
             currentDatabase.freeDataBlock(fcb);
-            currentDatabase.processRowForBlockPointers(fcb);
+            int index = Integer.parseInt(fcb.getIndexStartBlock());
+//            currentDatabase.processRowForBlockPointers(index);
+            currentDatabase.clean(fcb);
 //            currentDatabase.freeIndexBlock(fcb);
           } else {
             System.out.println("Missing filename for 'fcb' command.");
