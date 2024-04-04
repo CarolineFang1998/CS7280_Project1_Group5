@@ -455,6 +455,12 @@ public class PFS {
         System.err.println("An error occurred while writing the file: " + e.getMessage());
       }
     }
+    try {
+      writeCharArrayToFile();
+      System.out.println("File written successfully.");
+    } catch (IOException e) {
+      System.err.println("An error occurred while writing the file: " + e.getMessage());
+    }
   }
 
 private void appendMetadataToBlock(char[] block, char[] metadata, int existingMetadataCount) {
@@ -1111,6 +1117,12 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
         block[i] = '\0'; // Fill the remaining space with null characters or any default value
       }
     }
+    try {
+      writeCharArrayToFile();
+      System.out.println("fcb written successfully.");
+    } catch (IOException e) {
+      System.err.println("An error occurred while writing the file: " + e.getMessage());
+    }
 
 //    // Optional: Fill the end of the array with a default value if desired
 //    for (int i = block.length - LENGTH_TO_REMOVE; i < block.length; i++) {
@@ -1163,6 +1175,12 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
 
 
   }
+
+//    // Optional: Fill the end of the array with a default value if desired
+//    for (int i = block.length - LENGTH_TO_REMOVE; i < block.length; i++) {
+//      block[i] = '\0'; // Assuming you want to clear the shifted elements
+//    }
+
 
 
 

@@ -5,6 +5,8 @@ public class FCB {
     private int size; // Number of blocks, assumed to be an integer
     private String dataStartBlock; // Pointer to data start block, 7 characters, default "9999999"
     private String indexStartBlock; // Pointer to index start block, 7 characters, default "9999999"
+    private String pfsNumber; // PFS file number, 3 digits
+    private String blockNumber; // Block number, 4 digits
 
     // Constructor
     public FCB(String name, String time, int size) {
@@ -13,6 +15,8 @@ public class FCB {
         this.size = size;
         this.dataStartBlock = "9999999"; // Default value
         this.indexStartBlock = "9999999"; // Default value
+        this.pfsNumber = this.indexStartBlock.substring(0, 3);
+        this.blockNumber = this.indexStartBlock.substring(3);
     }
 
     // Additional constructor to specify all fields
@@ -20,6 +24,8 @@ public class FCB {
         this(name, time, size); // Reuse the first constructor for common initializations
         this.dataStartBlock = dataStartBlock.length() == 7 ? dataStartBlock : "9999999";
         this.indexStartBlock = indexStartBlock.length() == 7 ? indexStartBlock : "9999999";
+        this.pfsNumber = this.indexStartBlock.substring(0, 3);
+        this.blockNumber = this.indexStartBlock.substring(3);
     }
 
     // Additional constructor to specify all fields
@@ -76,6 +82,12 @@ public class FCB {
     }
     public String getIndexStartBlock() {
         return indexStartBlock;
+    }
+    public String getPfsNumber() {
+        return pfsNumber;
+    }
+    public String getBlockNumber() {
+        return blockNumber;
     }
 
 
