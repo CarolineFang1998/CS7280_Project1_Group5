@@ -1,4 +1,6 @@
-public class BlockPointer {
+import java.io.Serializable;
+
+public class BlockPointer implements Serializable {
   private int pfsNumber; // PFS file number, 3 digits
   private int blockNumber; // Block number, 4 digits
   private String ptrString; // Combined 7 digit string representation

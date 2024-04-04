@@ -1,12 +1,5 @@
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 
 /**
  * A simple file system simulation for managing .db0 database files and
@@ -14,6 +7,7 @@ import java.util.Set;
  */
 public class FileSystem {
   public static final int BLOCK_SIZE = 256; // The size for a block. Unit is byte
+  public List<DB> dbList = new ArrayList<>();
 
   /**
    * Finds and returns a set of unique database file names in the current directory,
@@ -49,6 +43,30 @@ public class FileSystem {
     }
 
     return uniqueFileNames;
+  }
+  public void saveDatabase(DB database) {
+    try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(database.getName() + ".db0"))) {
+      oos.writeObject(database);
+    } catch (IOException e) {
+      System.err.println("Error saving database: " + e.getMessage());
+    }
+  }
+  public DB loadDatabase(String dbName) {
+    try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(dbName + ".db0"))) {
+      return (DB) ois.readObject();
+    } catch (IOException | ClassNotFoundException e) {
+      System.err.println("Error loading database: " + e.getMessage());
+      return null;
+    }
+  }
+
+  public String showDatabase() {
+    StringBuilder sb = new StringBuilder();
+    for (DB db : dbList) {
+      sb.append(db.getName()).append("\n");
+    }
+    System.out.println(sb.toString());
+    return sb.toString();
   }
 
   public static void main(String[] args) throws IOException {
@@ -107,6 +125,9 @@ public class FileSystem {
       } else if ("quit".equalsIgnoreCase(command)) {
         System.out.println("Exiting NoSQL CLI...");
         break;
+      } else if ("showdatabase".equalsIgnoreCase(command)) {
+        fileSystem.showDatabase();
+
       } else if ("open".equalsIgnoreCase(command)) {
         if (commandParts.length > 1) {
           String databaseName = commandParts[1];
@@ -117,6 +138,11 @@ public class FileSystem {
             // create a new database.db0-> input (string name, block size)
             currentDatabase = new DB(databaseName, BLOCK_SIZE, false);
             uniqueDb0Files.add(databaseName);
+            // save the database
+            fileSystem.saveDatabase(currentDatabase);
+            fileSystem.dbList.add(currentDatabase);
+            fileSystem.loadDatabase(databaseName);
+
 
           } else {
             // if the database exists: load the old database
@@ -223,9 +249,25 @@ public class FileSystem {
         } else if ("tree".equalsIgnoreCase(command)) { // given a fcb name, show the btree
           if (commandParts.length > 1) {
             String name = commandParts[1];
-            currentDatabase.getBtree(name);
+            Btree btree = currentDatabase.getBtree(name);
+            FCB fcb = currentDatabase.findFCBByName(name);
+            String indexBlock = fcb.getIndexStartBlock();
+            int indexBlockInt = Integer.parseInt(indexBlock);
+            System.out.println("Index block: " + indexBlockInt);
+
           } else {
             System.out.println("Missing filename for 'tree' command.");
+          }
+        } else if ("fcb".equalsIgnoreCase(command)) {
+          if (commandParts.length > 1) {
+            String name = commandParts[1];
+            FCB fcb = currentDatabase.findFCBByName(name);
+//            currentDatabase.getFirstPFS().showIndexBlockByFCB(fcb);
+//            currentDatabase.getFirstPFS().removeDataBlock(fcb);
+            currentDatabase.freeDataBlock(fcb);
+            currentDatabase.freeIndexBlock(fcb);
+          } else {
+            System.out.println("Missing filename for 'fcb' command.");
           }
 
 //

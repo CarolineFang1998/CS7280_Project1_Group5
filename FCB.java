@@ -1,7 +1,8 @@
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-public class FCB {
+public class FCB implements Serializable {
     private String name; // FCB name, limited to 20 characters
 //    private String time; // Timestamp, formatted as "15/SEP/23:25PM", limited to 14 characters
     private LocalDateTime time; // Timestamp, formatted as "15/SEP/23:25PM", limited to 14 characters

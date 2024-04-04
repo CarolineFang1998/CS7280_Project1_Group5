@@ -1,4 +1,6 @@
-public class KeyPointer {
+import java.io.Serializable;
+
+public class KeyPointer implements Serializable {
   private Integer key;
   private String pointer;
   private String keyPointerStr;

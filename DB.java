@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Serializable;
 import java.security.Key;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -10,7 +11,7 @@ import java.util.*;
  * Represents a database, handling the creation and management of PFS files
  * and the upload and storage of data into these files.
  */
-public class DB {
+public class DB implements Serializable {
   // Variables
   private String name; // Name of the database.
   private int blockSize; // Size of one blocks within the PFS files. Unit is byte.
@@ -18,7 +19,7 @@ public class DB {
   private int numOfPFSFiles; // Number of PFC files, default value 1
   private List<PFS> pfsList; // List of PFS instances associated with this database.
   private List<FCB> fcbList; // List of FCB instances associated with this database.
-
+  private List<char[][]> pfsContentList; // List of char arrays representing the content of each PFS file.
   private Map<String, Btree> filenameToBtreeMap;
   private Map<String,List<KeyPointer>> keyPointerMap;
 
@@ -35,7 +36,7 @@ public class DB {
     this.blockSize = blockSize;
     this.pfsList = new ArrayList<>();
     this.fcbList = new ArrayList<>();
-
+    this.pfsContentList = new ArrayList<>();
     this.filenameToBtreeMap = new HashMap<>();
     this.keyPointerMap = new HashMap<>();
     if (!isLoad) {
@@ -626,6 +627,66 @@ public class DB {
         }
     }
 
+    // free data block given fcb
+    public void freeDataBlock(FCB fcb) {
+        String dataStartBlock = fcb.getDataStartBlock();
+        int dataStartBlockNumber = Integer.parseInt(dataStartBlock);
+        int endBlockNumber = Integer.parseInt(fcb.getIndexStartBlock())-1;
+        for(int i=dataStartBlockNumber; i<=endBlockNumber; i++) {
+          System.out.println(pfsList.get(0).getContent()[i]);
+            pfsList.get(0).updateBitMap(i, false);
+
+        }
+
+      System.out.println("next pointer" + pfsList.get(0).getContent()[endBlockNumber][255]);
+
+      System.out.println("empty blocks" + pfsList.get(0).getBlockLeft());
+
+    }
+
+    // free index block given fcb
+    // read pfslist, find the index block, traverse the index block, free the data block
+      public void freeIndexBlock(FCB fcb) {
+        String indexStartBlock = fcb.getIndexStartBlock();
+        int indexStartBlockNumber = Integer.parseInt(indexStartBlock);
+        Queue<Integer> queue = new LinkedList<>();
+
+        // only deal with the first pfs file
+
+
+//      int sequenceNumber = 0;
+//        for (PFS pfs : pfsList) {
+//          if (pfs.showDataBlockByFCB(fcb)) {
+//            System.out.println("index block found in .db" + pfs.getSequenceNumber());
+//            queue.add(indexStartBlockNumber);
+//
+//          } will out of range
+
+
+//        }
+//        for (PFS pfs : pfsList) {
+//          this.pfsContentList.add(pfs.getContent());
+//
+//
+//        }
+//        for (char[][] content : pfsContentList) {
+//          for (int i = indexStartBlockNumber - 1; i < content.length; i++) {
+//            String blockEnd = new String(content[i], 249, 7); // Start from 249 to get the last 7 characters
+//            if (blockEnd.equals("9999999")) {
+//              queue.add(indexStartBlockNumber);
+//              break;
+//            }
+//            // free the data block
+////            freeDataBlockByIndexBlock(content[i]);
+//            //print out the row of the index block
+//            System.out.println("indexblock" + content[i][1]);
+
+//          }
+
+
+      }
+
+
 
 
 
@@ -684,6 +745,21 @@ public class DB {
 //      System.out.println(); // Newline after each level is processed
 //    }
 //    }
+  // read the DB.db0 file to get fcb metadata, find the index block, and traverse the blocks in the pfs files
+  // becasue there can be multiple pfs files, we need to go through all the pfs files to find the index block
+
+  // build a queue, indexblockstart = getIndexStartBlock() , go to each block, find block pointer
+  // : if pointer is null than'9999999' , do not add to queue, else add to queue,  then pop queue,
+  // (first one is the root) clear node (1.overwrite it as ' ', 2. fetch the block number from the pointer
+  // and updatebitmap(blocknum, false) ,  while queue is not empty,  pop queue,
+  // repeat the process, 1. clear node, 2. updatebitmap(blocknum, false)
+  // we don't use btree, because we don't have the btree object, we only have the fcb object
+//  public void freeFCBIndexBlock(FCB fcb) {
+//    String indexStartBlock = fcb.getIndexStartBlock();
+//    int indexStartBlockNumber = Integer.parseInt(indexStartBlock);
+//    for (PFS pfs : pfsList) {
+//
+//  }
 
 
 

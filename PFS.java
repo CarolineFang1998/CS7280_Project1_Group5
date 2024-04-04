@@ -3,8 +3,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * This object is the PFS which is content of .db file.
@@ -12,7 +11,7 @@ import java.util.List;
  * For all the .db files, block 0~3 are hexadecimal bitmap.
  * For .db0, block 4 is the database metadata. block 5 is the FCB metadetas
  */
-public class PFS {
+public class PFS implements Serializable{
   private DB db; // A DB object
   private int sequenceNumber; // An integer sequence number
   private char[][] content; // The char[4000][256] stores all the data
@@ -1158,12 +1157,16 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
   // iterate keypointer list, and update the bitmap
   public void freeBlocksByFCB(String fcbName) {
     List<KeyPointer> keyPointerList = db.getKeyPointerList(fcbName);
+    Set<Integer> blockNumList = new HashSet<>();
     for (KeyPointer kp : keyPointerList) {
       String pointer = kp.getPointer();
       DataBlockPointer dbp = new DataBlockPointer(pointer);
       // blockNum is the pointer
       int blockNum = dbp.getBlockNumber();
+      blockNumList.add(blockNum);
+    }
 //      int blockNum = Integer.parseInt(kp.getPointer());
+    for (int blockNum : blockNumList) {
       System.out.println("Freeing block: " + blockNum);
       updateBitMap(blockNum, false);
 
@@ -1172,6 +1175,86 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
 
 
   }
+
+  public void freeDataBlocksByFCB(FCB fcb) {
+    String dataStartBlock = fcb.getDataStartBlock();
+
+  }
+
+//  // show the index block based on the given FCB
+//    public int showIndexBlockByFCB(FCB fcb) {
+//      String indexPointer = fcb.getDataStartBlock();
+//      int endBlockNum = -1;
+//      //traverse this.content[] to find the index block
+//      //when this.content[i][j] last9 char is '9999999' that's the end of the data block
+//        // the next block is the index block
+//        int indexBlockNum = Integer.parseInt(indexPointer);
+//        System.out.println("Index block number: " + indexBlockNum);
+//
+//
+//        for(int i = indexBlockNum; i < 4000; i++) {
+//          char[] block = content[i];
+//          String blockStr = new String(block);
+//          System.out.println(blockStr);
+//          if (blockStr.contains("9999999")) {
+//            endBlockNum = i;
+//
+//            System.out.println("Index block number: " + endBlockNum);
+//            break;
+//          }
+//
+//
+//        }
+//          return endBlockNum;
+//
+//
+//
+//
+//
+//    }
+  public boolean showDataBlockByFCB(FCB fcb) {
+    String indexPointer = fcb.getDataStartBlock();
+    boolean isEndBlock = false;
+//    int endBlockNum = -1; // Initialize to -1 to indicate not found
+    int indexBlockNum = Integer.parseInt(indexPointer);
+    System.out.println("Index block start number: " + indexBlockNum);
+
+    for (int i = indexBlockNum; i < 4000; i++) {
+      char[] block = content[i];
+      // Optimization: Check only the last 7 characters of the block
+      String lastSevenChars = new String(block, block.length - 7, 7);
+
+//      System.out.println(new String(block)); // Print the entire block content
+
+      // Check if the last 7 characters contain "9999999"
+      if (lastSevenChars.equals("9999999")) {
+//        endBlockNum = i;
+//        System.out.println("End index block number: " + endBlockNum);
+        isEndBlock = true;
+        break; // Break the loop once the end marker is found
+      }
+
+    }
+    return isEndBlock ; //
+  }
+
+//    public void removeDataBlock(FCB fcb) {
+//      int endBlockNum =showDataBlockByFCB(fcb);
+//      String dataStartBlock = fcb.getDataStartBlock();
+//      int startBlockNum = Integer.parseInt(dataStartBlock);
+//      for (int i = startBlockNum; i <= endBlockNum; i++) {
+//        updateBitMap(i, false);
+//        // clear the block
+//
+//      }
+//      System.out.println("current free blocks " + this.blockLeft);
+//
+////      int i =showIndexBlockByFCB(fcb);
+//    }
+
+
+
+
 
 
 

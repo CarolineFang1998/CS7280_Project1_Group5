@@ -1,4 +1,6 @@
-public class DataBlockPointer {
+import java.io.Serializable;
+
+public class DataBlockPointer implements Serializable {
   private int pfsNumber; // PFS file number, 3 digits
   private int blockNumber; // Block number, 4 digits
   private int recordNumber; // Record number, 1 digits, from 0 to 5
