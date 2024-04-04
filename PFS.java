@@ -1120,6 +1120,13 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
       } else {
         block[i] = '\0'; // Fill the remaining space with null characters or any default value
       }
+
+    }
+    try {
+      writeCharArrayToFile();
+      System.out.println("fcb written successfully.");
+    } catch (IOException e) {
+      System.err.println("An error occurred while writing the file: " + e.getMessage());
     }
 
 //    // Optional: Fill the end of the array with a default value if desired

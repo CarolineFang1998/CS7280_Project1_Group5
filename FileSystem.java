@@ -335,14 +335,14 @@ public class FileSystem {
             //print the fcb content
             int existingMetadataCount = currentDatabase.getNumOfFCBFiles();
             char[] fcbBlock = currentDatabase.getFirstPFS().getContent()[5];
-            for (int i = 0; i < 57; i++) {
-              System.out.print(fcbBlock[i]);
-            }
+//            for (int i = 0; i < 57; i++) {
+//              System.out.print(fcbBlock[i]);
+//            }
             //print fcb content
             System.out.println("FCB content before removal:");
             System.out.println(fcbBlock);
             PFS pfs = currentDatabase.getFirstPFS();
-//            pfs.removeElements(fcbBlock, fcbIndex);
+            pfs.removeElements(fcbBlock, fcbIndex);
             // update bitmap
 //            pfs.freeBlocksByFCB(FCBName);
             //

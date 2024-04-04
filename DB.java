@@ -20,7 +20,7 @@ public class DB implements Serializable {
     private int numOfPFSFiles; // Number of PFC files, default value 1
     private List<PFS> pfsList; // List of PFS instances associated with this database.
     private List<FCB> fcbList; // List of FCB instances associated with this database.
-    private List<char[][]> pfsContentList; // List of char arrays representing the content of each PFS file.
+    private char[][] allPfsContent;// List of char arrays representing the content of each PFS file.
     private Map<String, Btree> filenameToBtreeMap;
     private Map<String, List<KeyPointer>> keyPointerMap;
 
@@ -37,9 +37,12 @@ public class DB implements Serializable {
         this.blockSize = blockSize;
         this.pfsList = new ArrayList<>();
         this.fcbList = new ArrayList<>();
-        this.pfsContentList = new ArrayList<>();
+        this.allPfsContent = new char[0][0];
+
         this.filenameToBtreeMap = new HashMap<>();
         this.keyPointerMap = new HashMap<>();
+        // traverse the pfsList and return a char[][] to store all the content
+
         if (!isLoad) {
             init();
         } else {
@@ -636,19 +639,19 @@ public class DB implements Serializable {
         int dataStartBlockNumber = Integer.parseInt(dataStartBlock);
         int endBlockNumber = Integer.parseInt(fcb.getIndexStartBlock()) - 1;
         for (int i = dataStartBlockNumber; i <= endBlockNumber; i++) {
-            System.out.println(pfsList.get(0).getContent()[i]);
+//            System.out.println(pfsList.get(0).getContent()[i]);
             pfsList.get(0).updateBitMap(i, false);
 
         }
 
-        System.out.println("next pointer" + pfsList.get(0).getContent()[endBlockNumber][255]);
-
-        System.out.println("empty blocks" + pfsList.get(0).getBlockLeft());
+//        System.out.println("next pointer" + pfsList.get(0).getContent()[endBlockNumber][255]);
+//
+//        System.out.println("empty blocks" + pfsList.get(0).getBlockLeft());
 
     }
 
     public Queue<Integer> clean(FCB fcb) {
-        String indexStartBlock = fcb.getIndexStartBlock();
+        String indexStartBlock = fcb.getBlockNumber();
         int indexStartBlockNumber = Integer.parseInt(indexStartBlock);
         Queue<Integer> queue = new LinkedList<>();
         queue.add(indexStartBlockNumber);
@@ -679,6 +682,12 @@ public class DB implements Serializable {
 //            System.out.println("queue" + queue);
 
         }
+        try {
+            this.pfsList.get(0).writeCharArrayToFile();
+            System.out.println("File updated successfully.");
+        } catch (IOException e) {
+            System.err.println("An error occurred while writing the file: " + e.getMessage());
+        }
 
         System.out.println("empty blocks" + pfsList.get(0).getBlockLeft());
         return queue;
@@ -686,7 +695,25 @@ public class DB implements Serializable {
     }
 
     public Queue<Integer> processRowForBlockPointers(int blockNumber) {
+        // extract all contents from pfsList
+//        for (PFS pfs : pfsList) {
+//            char[][] pfsContent = pfs.getContent();
+//            // Calculate new size for the merged array
+//            char[][] newPfsContent = new char[this.allPfsContent.length + pfsContent.length][];
+//
+//            // Copy existing content into the new array
+//            System.arraycopy(this.allPfsContent, 0, newPfsContent, 0, this.allPfsContent.length);
+//
+//            // Copy new content from the current PFS into the new array
+//            System.arraycopy(pfsContent, 0, newPfsContent, this.allPfsContent.length, pfsContent.length);
+//
+//            // Update allPfsContent to point to the new, merged array
+//            this.allPfsContent = newPfsContent;
+//        }
+
+
         char[][] content = pfsList.get(0).getContent();
+//        char[][] content = this.allPfsContent;
         Queue<Integer> blockPointersQueue = new LinkedList<>();
 //        blockPointersQueue.add(blockNumber);
         final int BLOCK_POINTER_SIZE = 7; // Size of block pointer
@@ -736,38 +763,7 @@ public class DB implements Serializable {
         return blockPointersQueue;
     }
 
-    public Queue<Integer> processRowForBlockPointers2(int blockNumber) {
-        char[][] content = pfsList.get(0).getContent();
-        Queue<Integer> blockPointersQueue = new LinkedList<>();
-        final int BLOCK_POINTER_SIZE = 7; // Size of block pointer
-        final int KEY_POINTER_SIZE = 15; // Size of key pointer
-        final String TERMINATOR = "9999999";
-
-        char[] row = content[blockNumber];
-        blockPointersQueue.add(blockNumber); // Add the current block number to the queue (for processing later
-
-        int index = 0;
-        while (index < row.length - BLOCK_POINTER_SIZE) { // Ensure room for a full block pointer
-            if (row[index] == '\0') break; // Early termination if null character encountered
-
-            String blockPointerStr = new String(row, index, BLOCK_POINTER_SIZE).trim();
-
-            if (!TERMINATOR.equals(blockPointerStr)) {
-                try {
-                    int blockPointer = Integer.parseInt(blockPointerStr);
-                    blockPointersQueue.add(blockPointer);
-                } catch (NumberFormatException e) {
-                    // Log error or handle invalid block pointer
-                    System.err.println("Invalid block pointer encountered: " + blockPointerStr);
-                }
-            }
-
-            index += BLOCK_POINTER_SIZE + KEY_POINTER_SIZE; // Move to next block pointer
-        }
-
-        System.out.println("blockPointersQueue: " + blockPointersQueue);
-        return blockPointersQueue;
-    }
+    //TODO : has to rewirte the removed block to empty in pfs file
 
 
     // free index block given fcb
@@ -901,6 +897,7 @@ public class DB implements Serializable {
         int currentIndex = rootNodeIndex;
         final String TERMINATOR = "9999999";
         char[][] content = pfsList.get(0).getContent();
+        List<Integer> childPointers = new ArrayList<>();
 
         while (currentIndex != -1) {
             blocksAccessed++; // Increment the counter for each new block accessed.
@@ -910,7 +907,9 @@ public class DB implements Serializable {
                 // Extract the child pointer. If it's '9999999', just move to the next.
                 String childPointerStr = new String(node, i, BLOCK_POINTER_SIZE).trim();
 
-                if (!TERMINATOR.equals(childPointerStr)) { // If childPointerStr is not '9999999'
+                if (!TERMINATOR.equals(childPointerStr)) {
+                    //TODO: check if the childPointerStr is empty
+                    childPointers.add(Integer.parseInt(childPointerStr));// If childPointerStr is not '9999999'
                     try {
                         int nextIndex = Integer.parseInt(childPointerStr); // Convert to int for possible traversal
                         // Here, you can decide to enqueue nextIndex for later processing or immediate follow-up.
@@ -918,6 +917,7 @@ public class DB implements Serializable {
                         System.err.println("Invalid child pointer encountered: " + childPointerStr);
                     }
                 }
+
 
                 // Check if the last 7 chars are '9999999', then it's time to stop for the current block.
                 if (i + BLOCK_POINTER_SIZE + KEY_POINTER_SIZE + BLOCK_POINTER_SIZE > node.length) {
@@ -1064,6 +1064,17 @@ public class DB implements Serializable {
 
         return null; // Key not found
     }
+
+    public boolean isleef(List<String> blockpointerList){
+        for(String blockPointer : blockpointerList){
+            if(blockPointer.equals("9999999")){
+                return true;
+            }
+        }
+        return false;
+    }
+
+
 
 
 

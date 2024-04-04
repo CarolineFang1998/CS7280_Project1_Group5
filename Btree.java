@@ -215,6 +215,7 @@ final class Btree {
 
         int i = 0;
         s += "" + pointer;
+        //node.values[i].getKey() is the key value of the i-th element in the node
         while (i < node.size && value > node.values[i].getKey()) {
             i++;
         }
