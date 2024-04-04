@@ -46,6 +46,7 @@ public class DB {
     if (!isLoad) {
       System.out.println("creating DB " + name);
       init();
+      loadExistingPFSs();
     } else {
       System.out.println("loading DB " + name);
       // todo, load the previous pfs files
@@ -55,7 +56,6 @@ public class DB {
       // todo: load the fcb lists
       this.numOfFCBFiles = this.pfsList.get(0).loadExistingFCB(this.fcbList);
       System.out.println("loading fcb size" + numOfFCBFiles);
-
     }
   }
 
@@ -68,6 +68,15 @@ public class DB {
       PFS pfs = new PFS(this, i);
       this.pfsList.add(pfs);
     }
+  }
+
+  public void showFCBs() {
+    for(int i=0; i<this.fcbList.size(); i++) {
+      if(fcbList.get(i).getName() != "") {
+        fcbList.get(i).showContent();
+      }
+    }
+    System.out.println();
   }
 
   /**
@@ -266,13 +275,13 @@ public class DB {
     LocalDateTime time = LocalDateTime.now();
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MMM/yy:HHa");
     String formattedTime = time.format(formatter);
-    pfsList.get(0).updateFCBMetadeta(fileName, formattedTime,
-            blocksSize + btree.getCntNodes(), dataStartPtr, indexRootPtr);
     FCB newFCB = new FCB(fileName, formattedTime, blocksSize + btree.getCntNodes(), dataStartPtr, indexRootPtr);
     fcbList.add(newFCB);
 
-    System.out.println("empty space" + pfsList.get(0).getBlockLeft());
-    System.out.println("calculate empty space" + pfsList.get(0).calculateBlocksLeft());
+    pfsList.get(0).updateFCBMetadata(fcbList);
+
+//    System.out.println("empty space" + pfsList.get(0).getBlockLeft());
+//    System.out.println("calculate empty space" + pfsList.get(0).calculateBlocksLeft());
 
     this.numOfFCBFiles++;
     pfsList.get(0).updateSuperBlock();
@@ -572,15 +581,6 @@ public class DB {
 
   public void setNumOfPFSFiles(int numOfPFSFiles) {
     this.numOfPFSFiles = numOfPFSFiles;
-  }
-
-  // show PFS'S fcb metadata
-  public void showPFSFCBMetadata() {
-    for(FCB fcb: fcbList) {
-      if(fcb.getName() != "") {
-        fcb.showContent();
-      }
-    }
   }
 
   /**

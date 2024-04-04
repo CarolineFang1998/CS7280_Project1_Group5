@@ -108,6 +108,8 @@ public class FileSystem {
         System.out.println("Exiting NoSQL CLI...");
         break;
       } else if ("open".equalsIgnoreCase(command)) {
+        // uodate unique files
+        uniqueDb0Files = fileSystem.findUniqueDb0Files();
         if (commandParts.length > 1) {
           String databaseName = commandParts[1];
           //check if database exist
@@ -194,8 +196,10 @@ public class FileSystem {
             System.out.println("No FCB files found.");
             continue;
           }
-          currentDatabase.showPFSFCBMetadata();
+          currentDatabase.showFCBs();
         } else if ("find".equalsIgnoreCase(command)) {
+
+
 
         } else if ("rm".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
@@ -251,7 +255,7 @@ public class FileSystem {
 
 
       } else {
-        System.out.println("No database open. Use 'open <dbname>' to open a database.");
+        System.out.println("No database [open]. Use 'open <dbname>' to open a database.");
       }
 
 

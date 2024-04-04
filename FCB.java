@@ -31,7 +31,6 @@ public class FCB {
 
         // Name: First 20 characters, trim whitespace
         this.name = new String(fcbContent, 0, 20).trim();
-        System.out.println("name " + name);
 
         //if this is empty or deleted
         if (name == "") {
@@ -46,10 +45,8 @@ public class FCB {
 
         // Time: Characters 20 to 33, parse to LocalDateTime
         this.time = new String(fcbContent, 20, 14);
-        System.out.println("time " + time);
 
         // Size: Characters 34 to 43, parse to int
-        System.out.println("sizeStr " + new String(fcbContent, 34, 10).trim());
         String sizeStr = new String(fcbContent, 34, 10).trim();
 
         try {
@@ -60,11 +57,9 @@ public class FCB {
 
         // Data start block: Characters 44 to 50
         this.dataStartBlock = new String(fcbContent, 44, 7);
-        System.out.println("dataStartBlock " + dataStartBlock);
 
         // Index start block: Characters 50 to 57
         this.indexStartBlock = new String(fcbContent, 50, 7);
-        System.out.println("indexStartBlock " + indexStartBlock);
     }
 
 
@@ -88,7 +83,29 @@ public class FCB {
         System.out.println(name+" "+time+" "+size*256+" Bytes");
     }
 
-    public void toStringValue() {
+    public void print() {
+
         System.out.println(name+" "+time+" "+size+" " + this.dataStartBlock +" "+ this.indexStartBlock);
     }
+
+    public String toString() {
+        String newName = name;
+        // Pad the FCBName to ensure it is exactly 20 characters long
+        while (newName.length() < 20) {
+            newName += " ";
+        }
+
+        // Convert the size to a String and ensure it is exactly 10 bytes
+        String sizeStr = String.valueOf(size);
+        while (sizeStr.length() < 10) {
+            sizeStr = "0" + sizeStr; // Pad with spaces to align to the right
+        }
+//    System.out.println("sizeStr " + sizeStr);
+
+        // Prepare the final metadata string
+        String metadataStr = newName + time + sizeStr + dataStartBlock + indexStartBlock;
+        // Convert the metadata string to a char array and return
+        return metadataStr;
+    }
+
 }

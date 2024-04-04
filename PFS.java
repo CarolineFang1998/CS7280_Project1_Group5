@@ -75,24 +75,19 @@ public class PFS {
     }
   }
 
-  public int   loadExistingFCB(List<FCB> fcbList) {
+  public int loadExistingFCB(List<FCB> fcbList) {
     int size = 0;
     if(this.sequenceNumber == 0) {
+      // TODO: hard coded
       for(int i=0; i<4; i++) {
         int fcbLength = 58;
         String temp = new String(this.content[5], i*fcbLength, fcbLength);
-        System.out.println("i " + i);
-
-        System.out.println("temp:");
-        System.out.println(new String(this.content[5], i * fcbLength, fcbLength));
-//        System.out.println(new String(temp));
         FCB fcb = new FCB(temp.toCharArray());
         if(fcb.getName() != "") {
           size++;
-          System.out.println("size++");
+          fcbList.add(fcb);
         }
-        fcbList.add(fcb);
-        fcb.toStringValue();
+        fcb.print();
       }
     }
     return size;
@@ -438,44 +433,30 @@ public class PFS {
    * Updates the FCB (File Control Block) metadata with provided details and stores it in the PFS.
    * This includes the FCB name, creation or modification time, size, and pointers to data and index blocks.
    *
-   * @param FCBName           Name of the FCB.
-   * @param formattedTime              Timestamp for the FCB, typically creation or modification time.
-   * @param size              Size of the FCB, often reflecting the size of the data it controls.
-   * @param dataBlockStart    Pointer to the start of the data block for this FCB.
-   * @param indexStartPointer Pointer to the start of the index block for this FCB.
    */
-  public void updateFCBMetadeta(String FCBName, String formattedTime, int size,
-                                String dataBlockStart, String indexStartPointer) {
-    char[] metadata = generateFCBMetadata(FCBName, formattedTime, size, dataBlockStart, indexStartPointer);
-//    System.arraycopy(metadeta, 0, this.content[5], 0, metadeta.length);
-    int existingMetadataCount= this.db.getNumOfFCBFiles();
-    if (existingMetadataCount < 4) {
-      // There is space, append the new metadata
-      appendMetadataToBlock(this.content[5], metadata, existingMetadataCount);
-    } else {
-      // The block is full, find a new empty block and update the pointer in the current block
-      int newBlockIndex = findNextFreeBlock(); // Implement this to find an empty block
-      if (newBlockIndex != -1) {
-        // Update the pointer in the current block to the new block
-        updateBlockPointer(newBlockIndex, String.format("%07d", newBlockIndex));
+  public void updateFCBMetadata(List<FCB> fcbList) {
+    if(this.sequenceNumber == 0) {
+      System.out.println("updateFCBMetadata this.sequenceNumber == 0");
+      // TODO!!!: dynamically
+      String fcbMetadatas = "";
 
-        // Store the new metadata in the new block
-        appendMetadataToBlock(this.content[newBlockIndex], metadata, 0);
-      } else {
-        System.err.println("No empty block available.");
-        return;
+      for(int i=0; i< fcbList.size(); i++) {
+        fcbMetadatas += fcbList.get(i).toString();
+      }
+      char[] fcbMetadataArray = fcbMetadatas.toCharArray();
+      for(int i=0; i<fcbMetadataArray.length; i++) {
+        this.content[5][i] = fcbMetadataArray[i];
+      }
+      // write the current char array to .dbfile
+      try {
+        writeCharArrayToFile();
+        System.out.println("File written successfully.");
+      } catch (IOException e) {
+        System.err.println("An error occurred while writing the file: " + e.getMessage());
       }
     }
-
-
-    // write the current char array to .dbfile
-    try {
-      writeCharArrayToFile();
-      System.out.println("File written successfully.");
-    } catch (IOException e) {
-      System.err.println("An error occurred while writing the file: " + e.getMessage());
-    }
   }
+
 private void appendMetadataToBlock(char[] block, char[] metadata, int existingMetadataCount) {
   final int METADATA_SIZE = 57; // Size of each metadata entry
   final int MAX_ENTRIES = 4; // Maximum number of metadata entries per block
