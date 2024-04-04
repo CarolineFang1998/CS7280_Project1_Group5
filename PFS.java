@@ -18,7 +18,7 @@ public class PFS implements Serializable{
   private int blockLeft; // how many block left for this PFS file
   private int emptyBlock; // block # for next empty block
   private String fileName; // the file name for this PFS file
-//  private List<KeyPointer> keyPointerList;
+  private char[] metadata; // the metadata for this PFS file
 
 
   /**
@@ -34,7 +34,7 @@ public class PFS implements Serializable{
     this.sequenceNumber = PFSNumber; // if .db0, sequenceNumber = 0
     this.content = new char[4000][db.getBlockSize()]; // first block is always bitmap
     this.fileName = db.getName() + ".db" + PFSNumber;
-//    this.keyPointerList = new ArrayList<>();
+    this.metadata = new char[db.getBlockSize()];
 
     // check if this file is already exist
     if (db.getNumOfPFSFiles() >= sequenceNumber + 1) {
@@ -1155,26 +1155,26 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
 
 
   // iterate keypointer list, and update the bitmap
-  public void freeBlocksByFCB(String fcbName) {
-    List<KeyPointer> keyPointerList = db.getKeyPointerList(fcbName);
-    Set<Integer> blockNumList = new HashSet<>();
-    for (KeyPointer kp : keyPointerList) {
-      String pointer = kp.getPointer();
-      DataBlockPointer dbp = new DataBlockPointer(pointer);
-      // blockNum is the pointer
-      int blockNum = dbp.getBlockNumber();
-      blockNumList.add(blockNum);
-    }
-//      int blockNum = Integer.parseInt(kp.getPointer());
-    for (int blockNum : blockNumList) {
-      System.out.println("Freeing block: " + blockNum);
-      updateBitMap(blockNum, false);
-
-    }
-    System.out.println("empty blocks " +this.blockLeft);
-
-
-  }
+//  public void freeBlocksByFCB(String fcbName) {
+//    List<KeyPointer> keyPointerList = db.getKeyPointerList(fcbName);
+//    Set<Integer> blockNumList = new HashSet<>();
+//    for (KeyPointer kp : keyPointerList) {
+//      String pointer = kp.getPointer();
+//      DataBlockPointer dbp = new DataBlockPointer(pointer);
+//      // blockNum is the pointer
+//      int blockNum = dbp.getBlockNumber();
+//      blockNumList.add(blockNum);
+//    }
+////      int blockNum = Integer.parseInt(kp.getPointer());
+//    for (int blockNum : blockNumList) {
+//      System.out.println("Freeing block: " + blockNum);
+//      updateBitMap(blockNum, false);
+//
+//    }
+//    System.out.println("empty blocks " +this.blockLeft);
+//
+//
+//  }
 
   public void freeDataBlocksByFCB(FCB fcb) {
     String dataStartBlock = fcb.getDataStartBlock();

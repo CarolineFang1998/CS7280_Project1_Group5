@@ -287,26 +287,33 @@ public class FileSystem {
               continue;
             }
             FCB fcb = currentDatabase.findFCBByName(name);
+            int rootNodeIndex = Integer.parseInt(fcb.getIndexStartBlock());
             // find the btree
             Btree bTree = currentDatabase.getBtree(name);
-            bTree.DisplayEntileBTree();
-//            // print key and pointer
-//            System.out.println(currentDatabase.getKeyPointerList(name));
+//            bTree.DisplayEntileBTree();
+            // change a int to a 7 char string
+            String keyStr = String.format("%07d", key);
+            System.out.println("Key: " + keyStr);
+//            currentDatabase.searchForKey(rootNodeIndex, keyStr);
+//            currentDatabase.findKeyInIndexBlock(rootNodeIndex, key);
+            currentDatabase.extractKeyPointerPairs(rootNodeIndex);
+
+//
 
 
             //name = movies-small
-            String FCBName = name.split("\\.")[0];
-            String pointer = currentDatabase.search(key, name);
-            if (pointer == null) {
-
-              continue;
-            }
-            DataBlockPointer dataBlockPointer = new DataBlockPointer(pointer);
-            String record = currentDatabase.getRecordbyDataBlockPointer(dataBlockPointer.getPfsNumber(),
-                    dataBlockPointer.getBlockNumber(), dataBlockPointer.getRecordNumber());
-
-            System.out.println("Record found: " + record);
-
+//            String FCBName = name.split("\\.")[0];
+//            String pointer = currentDatabase.search(key, name);
+//            if (pointer == null) {
+//
+//              continue;
+//            }
+//            DataBlockPointer dataBlockPointer = new DataBlockPointer(pointer);
+//            String record = currentDatabase.getRecordbyDataBlockPointer(dataBlockPointer.getPfsNumber(),
+//                    dataBlockPointer.getBlockNumber(), dataBlockPointer.getRecordNumber());
+//
+//            System.out.println("Record found: " + record);
+//
 
           } else {
             System.out.println("Missing key for 'find' command.");
@@ -335,9 +342,16 @@ public class FileSystem {
             System.out.println("FCB content before removal:");
             System.out.println(fcbBlock);
             PFS pfs = currentDatabase.getFirstPFS();
-            pfs.removeElements(fcbBlock, fcbIndex);
+//            pfs.removeElements(fcbBlock, fcbIndex);
             // update bitmap
-            pfs.freeBlocksByFCB(FCBName);
+//            pfs.freeBlocksByFCB(FCBName);
+            //
+            currentDatabase.freeDataBlock(fcb);
+//            int index = Integer.parseInt(fcb.getIndexStartBlock());
+            currentDatabase.clean(fcb);
+//            currentDatabase.processRowForBlockPointers2(15);
+
+            //TODO: remove the fcb META DATA from the pfs
 
 
 //
