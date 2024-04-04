@@ -710,8 +710,14 @@ public class DB implements Serializable {
 //            // Update allPfsContent to point to the new, merged array
 //            this.allPfsContent = newPfsContent;
 //        }
+        Map<Integer, char[][]> pfsContents = new HashMap<>();
+        for (PFS pfs : pfsList) {
+            char[][] content = pfs.getContent();
 
+            pfsContents.put(pfs.getSequenceNumber(), content);
 
+        }
+//        char[][] specificPfsContent = pfsContents.get(pfsNumber);
         char[][] content = pfsList.get(0).getContent();
 //        char[][] content = this.allPfsContent;
         Queue<Integer> blockPointersQueue = new LinkedList<>();
