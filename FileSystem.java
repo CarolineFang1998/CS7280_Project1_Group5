@@ -229,16 +229,27 @@ public class FileSystem {
           }
         } else if ("rm".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
-            String fileName = commandParts[1];
+            String FCBName = commandParts[1];
+            char[] fcbBlock = currentDatabase.getFirstPFS().getContent()[5];
             // find the fcb
-            FCB fcb = currentDatabase.findFCBByName(fileName);
+            FCB fcb = currentDatabase.findFCBByName(FCBName);
             if (fcb == null) {
               System.out.println("FCB file not found.");
               continue;
             }
 
             if (fcb != null) {
+              PFS pfs = currentDatabase.getFirstPFS();
+
               currentDatabase.deleteFCBFile(fcb);
+              currentDatabase.cleanAll(fcb);
+              currentDatabase.deleteOneFCBFile();
+              currentDatabase.getFirstPFS().updateSuperBlock();
+              currentDatabase.removeFCB(FCBName);
+              System.out.println("FCB content after removal:");
+              System.out.println(fcbBlock);
+              pfs.updateFCBBlock(5, fcbBlock);
+              pfs.updateFCBMetadata(currentDatabase.getFcbList());
             }
 
           } else {
