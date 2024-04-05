@@ -211,11 +211,12 @@ public class FileSystem {
           if (commandParts.length > 1) {
             String FCBName = commandParts[1]; //"movies-small.csv"
             // find the fcb
-            if (currentDatabase.findFCBByName(FCBName) == null) {
+            FCB fcb = currentDatabase.findFCBByName(FCBName);
+            if (fcb == null) {
               System.out.println("FCB file not found.");
               continue;
             }
-            FCB fcb = currentDatabase.findFCBByName(FCBName);
+
             int fcbIndex = currentDatabase.getFcbList().indexOf(fcb);
             System.out.println("fcb index: " + fcbIndex);
 
@@ -231,9 +232,11 @@ public class FileSystem {
             System.out.println("FCB content before removal:");
             System.out.println(fcbBlock);
             PFS pfs = currentDatabase.getFirstPFS();
-            pfs.removeElements(fcbBlock, fcbIndex);
+//            pfs.removeElements(fcbBlock, fcbIndex);
             // free the data block
             currentDatabase.freeDataBlock(fcb);
+
+
             // FREE THE INDEX BLOCK
 //            currentDatabase.clean(fcb);
             currentDatabase.cleanAll(fcb);

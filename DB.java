@@ -88,7 +88,7 @@ public class DB {
 
       }
     }
-    return pfsContentList;
+    return this.pfsContentList;
   }
 
   /**
@@ -671,14 +671,79 @@ public class DB {
             System.out.println("FCB " + name + " not found.");
         }
     }
+//  public void freeDataBlock(FCB fcb) {
+//    String dataStartBlock = fcb.getDataStartBlock();
+//    int dataStartBlockNumber = Integer.parseInt(dataStartBlock);
+//    int endBlockNumber = Integer.parseInt(fcb.getIndexStartBlock()) - 1;
+//    for (int i = dataStartBlockNumber; i <= endBlockNumber; i++) {
+////            System.out.println(pfsList.get(0).getContent()[i]);
+//      pfsList.get(0).updateBitMap(i, false);
+//
+//    }
+//  }
   public void freeDataBlock(FCB fcb) {
-    String dataStartBlock = fcb.getDataStartBlock();
-    int dataStartBlockNumber = Integer.parseInt(dataStartBlock);
-    int endBlockNumber = Integer.parseInt(fcb.getIndexStartBlock()) - 1;
-    for (int i = dataStartBlockNumber; i <= endBlockNumber; i++) {
-//            System.out.println(pfsList.get(0).getContent()[i]);
-      pfsList.get(0).updateBitMap(i, false);
+    char[] content;
+    String currBPStr = fcb.getDataStartBlock();
+    String nextPointer =null ;
 
+    while (!currBPStr.equals("9999999")) {
+//      System.out.println("currBPStr " + currBPStr);
+      BlockPointer currBP = new BlockPointer(currBPStr);
+      int pfsNumber = Integer.parseInt(currBPStr.substring(0, 3));
+      int blockNumber = Integer.parseInt(currBPStr.substring(3, 7));
+
+      // Check if the pfsList contains an element at currBP.getPfsNumber() and it's not null
+      if (currBP.getPfsNumber() >= pfsList.size() || pfsList.get(currBP.getPfsNumber()) == null) {
+//        System.out.println("No file system found for the given PFS number: " + currBP.getPfsNumber());
+        break; // Or return, depending on how you want to handle this case
+      }
+
+      content = pfsList.get(pfsNumber).getContent()[blockNumber];
+
+
+      nextPointer = new String(content, blockSize - 7, 7);
+        System.out.println("content " + new String(content));
+//      System.out.println("nextPointer " + nextPointer);
+
+//      System.out.println("file" + currBP.getPfsNumber()+"this block content"+ currBP.getBlockNumber() );
+
+
+//      this.pfsList.get(currBP.getPfsNumber()).updateBitMap(currBP.getBlockNumber(), false);
+//      System.out.println("this block content"+ currBP.getBlockNumber() );
+
+//      if (nextPointer.isEmpty() || !nextPointer.matches("\\d+")||nextPointer.equals("9999999")) {
+//        System.out.println("Next pointer is invalid: '" + nextPointer + "'. Ending block traversal.");
+//        break;
+//      }
+      currBPStr = nextPointer;
+    }
+  }// TODO: it wired that when the pointer reach the larst onew in db0, it should go to db1, but it goes to db0 again
+
+
+  // traverse the data block and free data block
+  public void free(FCB fcb) {
+    // not working
+
+    String currBPStr = fcb.getDataStartBlock();
+    for (int i = 0; i < pfsList.size(); i++) {
+
+
+      char[] content;
+      String nextPointer = null;
+      while (!currBPStr.equals("9999999")) {
+        BlockPointer currBP = new BlockPointer(currBPStr);
+        // Check if the pfsList contains an element at currBP.getPfsNumber() and it's not null
+        if (currBP.getPfsNumber() >= pfsList.size() || pfsList.get(currBP.getPfsNumber()) == null) {
+//        System.out.println("No file system found for the given PFS number: " + currBP.getPfsNumber());
+          break; // Or return, depending on how you want to handle this case
+        }
+        content = pfsList.get(i).getContent()[currBP.getBlockNumber()];
+        System.out.println("file" + currBP.getPfsNumber() + "this block content" + currBP.getBlockNumber());
+        nextPointer = new String(content, blockSize - 7, 7);
+        // Update the bitmap for the current block
+        this.pfsList.get(i).updateBitMap(currBP.getBlockNumber(), false);
+      }
+      currBPStr = nextPointer;
     }
   }
 
@@ -829,7 +894,7 @@ public class DB {
 //      // overwrite the block with empty char array
 //      Arrays.fill(pfsList.get(pfsNumber).getContent()[currentBlockNumber], ' ');
 //      Arrays.fill(pfsContentList.get(pfsNumber)[currentBlockNumber], ' ');
-      Arrays.fill(this.getPfsContentList().get(pfsNumber)[currentBlockNumber], ' ');
+      Arrays.fill(this.pfsList.get(pfsNumber).getContent()[currentBlockNumber], ' ');
 
       queue.addAll(childPointers);
       queue.poll();
@@ -837,7 +902,10 @@ public class DB {
 
     }
     try {
-      this.pfsList.get(0).writeCharArrayToFile();
+      for (PFS pfs : pfsList) {
+        pfs.writeCharArrayToFile();
+      }
+//      this.pfsList.get(0).writeCharArrayToFile();
       System.out.println("File updated successfully.");
     } catch (IOException e) {
       System.err.println("An error occurred while writing the file: " + e.getMessage());
