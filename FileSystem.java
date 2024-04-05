@@ -250,8 +250,8 @@ public class FileSystem {
               currentDatabase.getFirstPFS().updateSuperBlock();
               currentDatabase.removeFCB(FCBName);
               pfs.removeElements(fcbBlock, fcbIndex);
-              System.out.println("FCB content after removal:");
-              System.out.println(fcbBlock);
+//              System.out.println("FCB content after removal:");
+//              System.out.println(fcbBlock);
               pfs.updateFCBBlock(5, fcbBlock);
               pfs.updateFCBMetadata(currentDatabase.getFcbList());
             }

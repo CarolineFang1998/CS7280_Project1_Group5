@@ -841,7 +841,7 @@ public class DB {
         pfs.writeCharArrayToFile();
       }
 //      this.pfsList.get(0).writeCharArrayToFile();
-      System.out.println("File updated successfully.");
+//      System.out.println("File updated successfully.");
     } catch (IOException e) {
       System.err.println("An error occurred while writing the file: " + e.getMessage());
     }
@@ -849,7 +849,7 @@ public class DB {
     for (PFS pfs : pfsList) {
       blockLeft += pfs.getBlockLeft();
     }
-    System.out.println("empty blocks" + blockLeft);
+//    System.out.println("empty blocks" + blockLeft);
 
     return queue;
 
