@@ -230,7 +230,7 @@ public class FileSystem {
           }
         } else if ("rm".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
-            String FCBName = commandParts[1]; //"movies-small.csv"
+            String FCBName = commandParts[1];
             // find the fcb
             if (currentDatabase.findFCBByName(FCBName) == null) {
               System.out.println("FCB file not found.");

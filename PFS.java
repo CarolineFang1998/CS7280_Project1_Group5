@@ -78,7 +78,7 @@ public class PFS {
           size++;
           fcbList.add(fcb);
         }
-        fcb.print();
+//        fcb.print();
       }
     }
     return size;
