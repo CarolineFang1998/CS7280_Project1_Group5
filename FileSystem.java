@@ -166,6 +166,7 @@ public class FileSystem {
             String fileName = commandParts[1];
             // find the fcb
             FCB fcb = currentDatabase.findFCBByName(fileName);
+            System.out.println(fileName + " is downloaded in ./download.");
             if (fcb == null) {
               System.out.println("FCB file not found.");
               continue;
