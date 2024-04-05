@@ -771,9 +771,38 @@ public class DB {
       e.printStackTrace();
     }
 
-
-
   }
+
+  public void deleteFCBDataBlock(FCB fcb) {
+    String currBPStr = fcb.getDataStartBlock();
+
+    char[] content ;
+    String nextPointer ;
+
+    while (!currBPStr.equals("9999999")) {
+      BlockPointer currBP = new BlockPointer(currBPStr);
+      content = this.pfsList.get(currBP.getPfsNumber()).getContent()[currBP.getBlockNumber()];
+      nextPointer = new String(content, blockSize - 7, 7);
+
+      // Set currBPStr block to empty
+      this.pfsList.get(currBP.getPfsNumber()).setContentBlockEmpty(currBP.getBlockNumber());
+
+      // update pointer
+      currBPStr = nextPointer;
+    }
+  }
+
+  public void deleteFCBFile(FCB fcb) {
+    deleteFCBDataBlock(fcb);
+    // deleteFCBIndexBlock(fcb);
+
+    // delete FCB metadata and update size
+    // deleteFCBinSuperBlock(fcb);
+    for(int i=0; i< this.pfsList.size(); i++) {
+      this.pfsList.get(i).writeContentToFile();
+    }
+  }
+
 
 
 

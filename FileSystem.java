@@ -163,7 +163,6 @@ public class FileSystem {
 
         } else if ("get".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
-            // todo: implement get
             String fileName = commandParts[1];
             // find the fcb
             FCB fcb = currentDatabase.findFCBByName(fileName);
@@ -230,51 +229,21 @@ public class FileSystem {
           }
         } else if ("rm".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
-            String FCBName = commandParts[1];
+            String fileName = commandParts[1];
             // find the fcb
-            if (currentDatabase.findFCBByName(FCBName) == null) {
+            FCB fcb = currentDatabase.findFCBByName(fileName);
+            if (fcb == null) {
               System.out.println("FCB file not found.");
               continue;
             }
-            FCB fcb = currentDatabase.findFCBByName(FCBName);
-            int fcbIndex = currentDatabase.getFcbList().indexOf(fcb);
-            System.out.println("fcb index: " + fcbIndex);
 
-            // remove the fcb from the fcb list
-//              currentDatabase.removeFCB(FCBName);
-            //print the fcb content
-            int existingMetadataCount = currentDatabase.getNumOfFCBFiles();
-            char[] fcbBlock = currentDatabase.getFirstPFS().getContent()[5];
-            for (int i = 0; i < 57; i++) {
-              System.out.print(fcbBlock[i]);
+            if (fcb != null) {
+              currentDatabase.deleteFCBFile(fcb);
             }
-            //print fcb content
-            System.out.println("FCB content before removal:");
-            System.out.println(fcbBlock);
-            PFS pfs = currentDatabase.getFirstPFS();
-            pfs.removeElements(fcbBlock, fcbIndex);
-            // update bitmap
-            pfs.freeBlocksByFCB(FCBName);
-
-
-//
-            currentDatabase.deleteOneFCBFile();
-            currentDatabase.getFirstPFS().updateSuperBlock();
-            // remove from fcb list
-            currentDatabase.removeFCB(FCBName);
-            System.out.println("FCB content after removal:");
-            System.out.println(fcbBlock);
-            pfs.updateFCBBlock(5, fcbBlock);
-
-
-            // remove the fcb from the pfs
-//              currentDatabase.getFirstPFS().deleteFCBMetadata(fcb);
-//              System.out.println("FCB file removed: " + FCBName);
 
           } else {
             System.out.println("Missing filename for 'rm' command.");
           }
-
 
         } else {
           System.out.println("Unknown command or command not available outside a database context.");
