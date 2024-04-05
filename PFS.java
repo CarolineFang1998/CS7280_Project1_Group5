@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -1131,7 +1132,27 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
 
   }
 
+  public void setContentBlockEmpty(int blockNum) {
+    // mark this block to empty
+    updateBitMap(blockNum, false);
+    // fill this block to null
+    Arrays.fill(this.content[blockNum], '\u0000');
+  }
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
