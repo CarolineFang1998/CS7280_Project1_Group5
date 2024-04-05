@@ -63,8 +63,9 @@ For each record, we store the key and value as characters. We are using linked a
 
 ### .dbN(excluding .db0) Design
 When the .db0 file is full, our database will create a new .db file to store more data. Subsequent .dbN files (.db1, .db2, etc.) store the bitmap in the first 4 blocks. The remaining blocks will be either index blocks or data blocks.
+![Alt text](images/Project2_Design_Part2.png)
 
-<img src="images/Project2_Design_Part2.png" width="200" height="" alt="Project 2 Design Part 1">
+[//]: # (<img src="images/Project2_Design_Part2.png" width="200" height="" alt="Project 2 Design Part 1">)
 
 
 
