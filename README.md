@@ -132,8 +132,16 @@ Found record:
 
 ```
 
+### DB Assumptions
+- The database is assumed to be used as primary storage for rapid access to data stored directly on the filesystem
+- The design targets a single-user or single-process environment, assuming that concurrent access patterns are limited
+- The database is assumed to grow sequentially, with files (.dbN) being filled and expanded in order before moving on to the next.
+- All blocks within the database files are a fixed size (256 bytes)
 
-
+### Limitations
+- each new database's fcb block can only store 4 FCBs
+- there may be practical limitations on scalability, especially as the number of files (.dbN) increases
+- the database is not designed for concurrent access or multi-threaded environments
 
 
 ## Indexing Structure for NoSQL database
