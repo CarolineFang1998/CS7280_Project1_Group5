@@ -1,5 +1,7 @@
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -185,7 +187,6 @@ public class DB {
   public void loadExistingPFSs() {
     // find fcbs in the current dir and count how many of them
     this.numOfPFSFiles = countPFSFiles();
-    System.out.println("counting numOfPFSFiles " + numOfPFSFiles);
     for(int i=0; i < this.numOfPFSFiles; i++) {
       PFS pfs = new PFS(this, i);
       this.pfsList.add(pfs);
@@ -272,7 +273,6 @@ public class DB {
 
     // Since every line is now exactly 40 characters, set the second dimension to 40
     char[][] records = new char[lines.size()][40];
-    System.out.println("records.length " + records.length);
 
     for (int i = 0; i < lines.size(); i++) {
       char[] lineChars = lines.get(i).toCharArray();
@@ -331,11 +331,10 @@ public class DB {
     // load file, calculate the record size
     // transfer the file into a datablock char[]
 
-    System.out.println("Uploading FCB File: " + fileName);
+    System.out.println("Uploading FCB File: " + fileName + "...");
     String filePath = "./csvs/" + fileName;
     try {
       char[][] data = convertCSVToCharArray(filePath);
-      System.out.println("data.length " + data.length);
       List<char[]> blocks = recordsToBlock(data);
 
       storeBlocksInPFS(blocks, fileName, blocks.size());
@@ -378,12 +377,8 @@ public class DB {
 
     pfsList.get(0).updateFCBMetadata(fcbList);
 
-//    System.out.println("empty space" + pfsList.get(0).getBlockLeft());
-//    System.out.println("calculate empty space" + pfsList.get(0).calculateBlocksLeft());
-
     this.numOfFCBFiles++;
     pfsList.get(0).updateSuperBlock();
-    System.out.println("storeBlocksInPFS updateSuperBlock " + this.getNumOfFCBFiles());
 
     // write the current char array to .dbfile
     try {
@@ -400,7 +395,6 @@ public class DB {
     Node[] nodes = btree.getNodes();
 
     for(int i=0; i<emptyBlocks.size(); i++) {
-//      System.out.println("block: " + i);
       // generate a index block string
       int j=0;
       String temp = "";
@@ -409,32 +403,25 @@ public class DB {
 
         if(childPointer == -1 ) {
           temp += "9999999";
-//          System.out.print("9999999");
         } else {
           temp += emptyBlocks.get(childPointer);
-//          System.out.print(emptyBlocks.get(childPointer));
         }
-//        System.out.print(" (" + nodes[i].values[j].getKeyPointerStr() + ") ");
         temp += nodes[i].values[j].getKeyPointerStr();
       }
 
       int laseChildPointer = nodes[i].children[j];
       if(laseChildPointer == -1 ) {
         temp += "9999999";
-//        System.out.print(" 9999999 ");
       } else {
         temp += emptyBlocks.get(laseChildPointer);
-//        System.out.print(" " + emptyBlocks.get(laseChildPointer));
       }
 
-//      System.out.println();
       // write this block in content[][]
       BlockPointer bp = new BlockPointer(emptyBlocks.get(i));
       char[] tempCharArray = new char[this.blockSize];
       for (int k = 0; k < temp.toCharArray().length; k++) {
         tempCharArray[k] = temp.charAt(k);
       }
-//      System.out.println("temp " + String.valueOf(tempCharArray));
       this.pfsList.get(bp.getPfsNumber()).writeContent(bp.getBlockNumber(), tempCharArray);
     }
 
@@ -455,7 +442,6 @@ public class DB {
 
   // get the btree size and find empty blocks in database
   public List<String> findEmptyBlocks(int btreeSize) {
-    System.out.println("findEmptyBlocks btreeSize " + btreeSize);
     List<String> emptyBlocks = new ArrayList<>(); // list of BlockPointer String
 
     int blockleft = btreeSize; // counter for data block needs to insert
@@ -468,10 +454,6 @@ public class DB {
 
         // find empty blocks and update emptyBlocks List with empty BlockPointer String
         pfsList.get(i).findEmptyBlocks(assignedBlock, emptyBlocks);
-
-//        for(String blockStr: emptyBlocks){
-//          System.out.println(blockStr);
-//        }
 
         System.out.println("Inserted index block " + assignedBlock +" to .db" + pfsList.get(i).getSequenceNumber());
         // blockeleft mi
@@ -498,8 +480,6 @@ public class DB {
       // find empty blocks and update emptyBlocks List with empty BlockPointer String
       pfs.findEmptyBlocks(assignedBlock, emptyBlocks);
 
-      System.out.println(emptyBlocks.get(emptyBlocks.size()-1));
-
       System.out.println("Inserted " + assignedBlock +" to .db" + pfs.getSequenceNumber());
 
       // write the current char array to .dbfile
@@ -524,10 +504,8 @@ public class DB {
 //    this.btree = new Btree();
 
     for(KeyPointer currKeyPtr:keyPointerList) {
-//      System.out.println(currKeyPtr.getKey() + " " + currKeyPtr.getKeyPointerStr());
       btree.Insert(currKeyPtr);
 //      btree.DisplayEntileBTree();
-//      this.btree.Insert(currKeyPtr);
     }
     // Add the B-tree to the mapping with its corresponding FCB filename
     this.filenameToBtreeMap.put(fcbFilename, btree);
@@ -622,8 +600,6 @@ public class DB {
       // update the last pfs end block pointer to the next pfs begin pointer
       if (dataStartNEndPtrs.size() > 0) {
         BlockPointer lastBP = new BlockPointer(dataStartNEndPtrs.get(dataStartNEndPtrs.size()-1).get(1));
-//        System.out.println("updating db" + lastBP.getPfsNumber() + " at block " + lastBP.getBlockNumber()
-//                + " to " + currStartNEndPtr.get(0));
         pfsList.get(lastBP.getPfsNumber())
                 .updateBlockPointer(lastBP.getBlockNumber(), currStartNEndPtr.get(0));
 
@@ -695,8 +671,6 @@ public class DB {
         if (result.found) {
             // If the key exists, return the pointer associated with the key
           //  get the pointer from the btree, and print out the key's record
-//            System.out.println("Key found.");
-//            System.out.println(result.keyPointer.getKeyPointerStr());
           // total block accessed = block accessed in btree + one headerblock
             int totalBlocksAccessed = result.getBlockAccesses()+1;
             System.out.println("# of Blocks = " + totalBlocksAccessed);
@@ -758,65 +732,48 @@ public class DB {
         }
     }
 
+  public void downloadFCBFile(FCB fcb) {
+    // Ensure the ./download directory exists or create it
+    File downloadDir = new File("./download");
+    if (!downloadDir.exists()) {
+      downloadDir.mkdirs();
+    }
+    // Specify the path to the CSV file
+    String outputPath = "./download/" + fcb.getName();
+    int recordSize = 40;
+
+    String currBPStr = fcb.getDataStartBlock();
+
+    char[] content ;
+    String nextPointer ;
+
+    try (FileWriter writer = new FileWriter(outputPath)) {
+      while (!currBPStr.equals("9999999")) {
+        BlockPointer currBP = new BlockPointer(currBPStr);
+        content = this.pfsList.get(currBP.getPfsNumber()).getContent()[currBP.getBlockNumber()];
+        nextPointer = new String(content, blockSize - 7, 7);
+        // extract each 40 block and write to a .csv file to ./download
+
+
+        // Process each record
+        for (int i = 0; i < recordSize*6; i += 40) {
+          // Extract each record as a String, trimming trailing spaces
+          String record = new String(content, i, 40);
+          if(record.trim() == "") break;
+          // Write the record to the file, appending a new line
+          writer.write(record + "\n");
+        }
+
+        // update pointer
+        currBPStr = nextPointer;
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
 
 
 
-
-//  public void traverseAndUpdateBitmap(int index) {
-//    if (index < 0 ) {
-//      return;
-//    }
-//    Queue<Integer> queue = new LinkedList<>();
-//    queue.add(index);
-//    int level = 0;
-//
-//
-//    while (!queue.isEmpty()) {
-//      int levelLength = queue.size();
-//      System.out.print("L-" + level + ": ");
-//      level++;
-//      for (int i = 0; i < levelLength; i++) {
-//        int currentId = queue.poll();
-//        System.out.print(currentId + " ");
-//        Node currentNode = this.btree.getNodes()[currentId];
-//
-//        // Print all values within the current node
-//        System.out.print(currentId + "[");
-//        int count = 0;
-////            for (int val : currentNode) {
-//        for (KeyPointer node : currentNode.values) {
-//          int key = node.getKey();
-//          if (count > 0) {
-//            System.out.print(",");
-//          }
-//          if (key != -1) {
-//            System.out.print(key + " ");
-//            System.out.print(node.getPointer());
-////                System.out.print(node.getKeyPointerStr() );
-//          } else {
-//            System.out.print(" ");
-//          }
-//          count++;
-//        }
-//        System.out.print("]");
-//
-//        // Add child nodes of the current node to the queue for later processing
-//        for (int j = 0; j <= this.btree.getNodeSize(); j++) { // Iterate through all possible children
-//          int childId = currentNode.children[j];
-//          if (childId != -1) {
-//            queue.add(childId);
-//          } else {
-//            break;
-//          }
-//        }
-//
-//        System.out.print("\t"); // Tab-space for separating nodes at the same level
-//      }
-
-//      System.out.println(); // Newline after each level is processed
-//    }
-//    }
-
+  }
 
 
 

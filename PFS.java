@@ -57,7 +57,6 @@ public class PFS {
     }
 
     this.emptyBlock = findNextFreeBlock();
-//    System.out.println("this.emptyBlock " + this.emptyBlock);
 
     // write the current char array to .dbfile
     try {
@@ -527,10 +526,8 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
     // Update SuperBlock will be in the block 3
     updateBitMap(superBlockNum, true);
 
-    System.out.println("Database Name: " + this.db.getName());
-    System.out.println("Number of FCB Files: " + this.db.getNumOfFCBFiles());
-    System.out.println("Number of PFS Files: " + this.db.getNumOfPFSFiles());
-    System.out.println("Block Size: " + this.db.getBlockSize());
+//    System.out.println("Number of FCB Files: " + this.db.getNumOfFCBFiles());
+//    System.out.println("Number of PFS Files: " + this.db.getNumOfPFSFiles());
 
     String dbName = this.db.getName();
     int numOfFCBFiles = this.db.getNumOfFCBFiles();
@@ -594,8 +591,6 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
     int row = blockNum / (256 * 4);
     int col = (blockNum / 4) % 256;
     int bitPosition = blockNum % 4;
-
-//    System.out.println("hexIndex"+hexIndex+" bitPosition " + bitPosition);
 
     // Convert the hex character to binary
     char hexChar = this.content[row][col];
@@ -686,9 +681,7 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
         String line = reader.readLine();
         for (int colIndex = 0; colIndex < line.length() && colIndex < 256; colIndex++) {
           content[rowIndex][colIndex] = line.charAt(colIndex);
-//          System.out.print(content[rowIndex][colIndex]);
         }
-//        System.out.println();
         rowIndex++;
       }
     } catch (IOException e) {
@@ -1132,18 +1125,11 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
       DataBlockPointer dbp = new DataBlockPointer(pointer);
       // blockNum is the pointer
       int blockNum = dbp.getBlockNumber();
-//      int blockNum = Integer.parseInt(kp.getPointer());
-      System.out.println("Freeing block: " + blockNum);
+
       updateBitMap(blockNum, false);
-
     }
-    System.out.println("empty blocks " +this.blockLeft);
-
 
   }
-
-
-
 
 }
 

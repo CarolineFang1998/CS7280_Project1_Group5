@@ -166,25 +166,15 @@ public class FileSystem {
             // todo: implement get
             String fileName = commandParts[1];
             // find the fcb
-            if (currentDatabase.findFCBByName(fileName) == null) {
+            FCB fcb = currentDatabase.findFCBByName(fileName);
+            if (fcb == null) {
               System.out.println("FCB file not found.");
               continue;
             }
-            FCB fcb = currentDatabase.findFCBByName(fileName);
-            List<char[]> blocksData = currentDatabase.getFirstPFS().getBlocksByFCB(fcb);
-            currentDatabase.getFirstPFS().writeRecordsToCSV(fileName, blocksData);
-//            for (char[] blockData : blocksData) {
-//
-//              List<String> records =currentDatabase.getFirstPFS().extractRecordsFromBlock(blockData);
-//              currentDatabase.getFirstPFS().writeRecordsToCSV(fileName, records);
-//              for (String record : records) {
-//                System.out.println(record);
-            // write to a new csv file and store in the download directory
 
-
-//              }
-//
-
+            if (fcb != null) {
+              currentDatabase.downloadFCBFile(fcb);
+            }
 
           } else {
             System.out.println("Missing filename for 'get' command.");
