@@ -49,7 +49,6 @@ public class DB {
     if (!isLoad) {
       System.out.println("creating DB " + name + "...");
       init();
-      loadExistingPFSs();
     } else {
       System.out.println("loading DB " + name + "...");
       loadExistingPFSs();
@@ -556,6 +555,7 @@ public class DB {
     for(int i = 0; i < this.pfsList.size(); i++) {
       if (blockleft > 0 && pfsList.get(i).getBlockLeft() > 0) {
         // calculate how many blocks should I put in current file i
+
         int assignedBlock = Math.min(blockleft, pfsList.get(i).getBlockLeft());
 
         // add data to pfs file i, and return the start and end BlockPointer in string

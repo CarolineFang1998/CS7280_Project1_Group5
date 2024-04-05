@@ -666,6 +666,7 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
   }
 
   public int getBlockLeft() {
+    blockLeft = calculateBlocksLeft();
     return blockLeft;
   }
 
