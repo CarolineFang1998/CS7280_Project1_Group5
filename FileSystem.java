@@ -237,8 +237,17 @@ public class FileSystem {
               continue;
             }
 
+
             if (fcb != null) {
-              currentDatabase.deleteFCBFile(fcb);
+              char[] fcbBlock = currentDatabase.getFirstPFS().getContent()[5];
+              PFS pfs = currentDatabase.getFirstPFS();
+//              currentDatabase.deleteFCBDataBlock(fcb);
+
+              currentDatabase.cleanAll(fcb);
+              currentDatabase.deleteOneFCBFile();
+              currentDatabase.getFirstPFS().updateSuperBlock();
+              currentDatabase.removeFCB(fileName);
+              pfs.updateFCBBlock(5, fcbBlock);
             }
 
           } else {
