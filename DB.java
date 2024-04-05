@@ -796,11 +796,25 @@ public class DB {
     deleteFCBDataBlock(fcb);
     // deleteFCBIndexBlock(fcb);
 
+
     // delete FCB metadata and update size
-    // deleteFCBinSuperBlock(fcb);
+    deleteFCBinSuperBlock(fcb);
+
+
     for(int i=0; i< this.pfsList.size(); i++) {
       this.pfsList.get(i).writeContentToFile();
     }
+  }
+
+  public void deleteFCBinSuperBlock(FCB fcb){
+    // remove this fcb from the fcb list
+    this.fcbList.remove(fcb);
+    System.out.println("after remove size " + fcbList.size());
+
+    pfsList.get(0).updateFCBMetadata(fcbList);
+
+    this.numOfFCBFiles--;
+    pfsList.get(0).updateSuperBlock();
   }
 
 

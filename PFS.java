@@ -418,16 +418,21 @@ public class PFS {
    *
    */
   public void updateFCBMetadata(List<FCB> fcbList) {
-    if(this.sequenceNumber == 0) {
-      String fcbMetadatas = "";
+    if(fcbList.size() == 0) {
+      Arrays.fill(this.content[5], '\u0000');
+    } else {
+      if(this.sequenceNumber == 0) {
+        String fcbMetadatas = "";
 
-      for(int i=0; i< fcbList.size(); i++) {
-        fcbMetadatas += fcbList.get(i).toString();
-      }
-      char[] fcbMetadataArray = fcbMetadatas.toCharArray();
-      for(int i=0; i<fcbMetadataArray.length; i++) {
-        this.content[5][i] = fcbMetadataArray[i];
-      }
+        for(int i=0; i< fcbList.size(); i++) {
+          fcbMetadatas += fcbList.get(i).toString();
+        }
+        char[] fcbMetadataArray = fcbMetadatas.toCharArray();
+        for(int i=0; i<fcbMetadataArray.length; i++) {
+          this.content[5][i] = fcbMetadataArray[i];
+        }
+    }
+
       // write the current char array to .dbfile
       try {
         writeCharArrayToFile();
