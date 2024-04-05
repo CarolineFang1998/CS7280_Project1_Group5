@@ -231,6 +231,7 @@ public class FileSystem {
           if (commandParts.length > 1) {
             String FCBName = commandParts[1];
             char[] fcbBlock = currentDatabase.getFirstPFS().getContent()[5];
+
             // find the fcb
             FCB fcb = currentDatabase.findFCBByName(FCBName);
             if (fcb == null) {
@@ -239,6 +240,8 @@ public class FileSystem {
             }
 
             if (fcb != null) {
+
+              int fcbIndex = currentDatabase.getFcbList().indexOf(fcb);
               PFS pfs = currentDatabase.getFirstPFS();
 
               currentDatabase.deleteFCBFile(fcb);
@@ -246,6 +249,7 @@ public class FileSystem {
               currentDatabase.deleteOneFCBFile();
               currentDatabase.getFirstPFS().updateSuperBlock();
               currentDatabase.removeFCB(FCBName);
+              pfs.removeElements(fcbBlock, fcbIndex);
               System.out.println("FCB content after removal:");
               System.out.println(fcbBlock);
               pfs.updateFCBBlock(5, fcbBlock);
