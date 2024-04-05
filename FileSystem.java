@@ -171,8 +171,14 @@ public class FileSystem {
               continue;
             }
             FCB fcb = currentDatabase.findFCBByName(fileName);
-            List<char[]> blocksData = currentDatabase.getFirstPFS().getBlocksByFCB(fcb);
-            currentDatabase.getFirstPFS().writeRecordsToCSV(fileName, blocksData);
+
+            for (PFS pfs : currentDatabase.getPfsList()) {
+              List<char[]> blocksData = pfs.getBlocksByFCB(fcb);
+              //todo deal with out of 4000
+
+
+              pfs.writeRecordsToCSV(fileName, blocksData);
+            }
 //            for (char[] blockData : blocksData) {
 //
 //              List<String> records =currentDatabase.getFirstPFS().extractRecordsFromBlock(blockData);
@@ -229,7 +235,8 @@ public class FileSystem {
             // free the data block
             currentDatabase.freeDataBlock(fcb);
             // FREE THE INDEX BLOCK
-            currentDatabase.clean(fcb);
+//            currentDatabase.clean(fcb);
+            currentDatabase.cleanAll(fcb);
 
 //
             currentDatabase.deleteOneFCBFile();

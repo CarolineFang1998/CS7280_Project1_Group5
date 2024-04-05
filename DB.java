@@ -26,6 +26,7 @@ public class DB {
 
   private Map<String, Btree> filenameToBtreeMap;
   private Map<String,List<KeyPointer>> keyPointerMap;
+  private List<char[][]> pfsContentList;
 
   /**
    * Constructor for the DB class. Initializes a new database or loads an existing one.
@@ -41,8 +42,10 @@ public class DB {
     this.pfsList = new ArrayList<>();
     this.fcbList = new ArrayList<>();
 
+
     this.filenameToBtreeMap = new HashMap<>();
     this.keyPointerMap = new HashMap<>();
+    this.pfsContentList = new ArrayList<>();
     if (!isLoad) {
       System.out.println("creating DB " + name);
       init();
@@ -77,6 +80,15 @@ public class DB {
       }
     }
     System.out.println();
+  }
+  public List<char[][]> getPfsContentList() {
+    for (PFS pfs : pfsList) {
+      if (pfs.getContent() != null) {
+        pfsContentList.add(pfs.getContent());
+
+      }
+    }
+    return pfsContentList;
   }
 
   /**
@@ -641,6 +653,7 @@ public class DB {
     public PFS getFirstPFS() {
         return pfsList.get(0);
     }
+
     // DB get fcbList
     public List<FCB> getFcbList() {
         return fcbList;
@@ -789,24 +802,34 @@ public class DB {
     return blockPointersQueue;
   }
 
-  public Queue<Integer> cleanAll(FCB fcb) {
-    String indexStartBlock = fcb.getBlockNumber();
+  public Queue<String> cleanAll(FCB fcb) {
+    String indexStartBlock = fcb.getIndexStartBlock();
+
     int indexStartBlockNumber = Integer.parseInt(indexStartBlock);
-    Queue<Integer> queue = new LinkedList<>();
-    queue.add(indexStartBlockNumber);
-    System.out.println("first q" +queue);
+    String blockNumber = fcb.getBlockNumber();
+    Queue<String> queue = new LinkedList<>();
+//    queue.add(indexStartBlockNumber);
+    queue.add(indexStartBlock);
+//    System.out.println("first q" +queue);
 
 
 //    // clean the data block
     while (!queue.isEmpty()) {
-      int currentBlockNumber = queue.peek();
+//      int currentBlockNumber = queue.peek();
+        String currentBlockStr = queue.peek();
 
 
-      Queue<Integer> childPointers = processRowForBlockPointers(currentBlockNumber);
+      Queue<String> childPointers = processAllIndexBlocks(currentBlockStr);
 //            System.out.println("childPointers" + childPointers);
-      pfsList.get(0).updateBitMap(currentBlockNumber, false);
+      int currentBlockNumber = Integer.parseInt(currentBlockStr.substring(3));
+      int pfsNumber = Integer.parseInt(currentBlockStr.substring(0, 3));
+//      System.out.println("currentBlockNumber" + currentBlockNumber);
+//      System.out.println("pfsNumber" + pfsNumber);
+      pfsList.get(pfsNumber).updateBitMap(currentBlockNumber, false);
 //      // overwrite the block with empty char array
-      Arrays.fill(pfsList.get(0).getContent()[currentBlockNumber], ' ');
+//      Arrays.fill(pfsList.get(pfsNumber).getContent()[currentBlockNumber], ' ');
+//      Arrays.fill(pfsContentList.get(pfsNumber)[currentBlockNumber], ' ');
+      Arrays.fill(this.getPfsContentList().get(pfsNumber)[currentBlockNumber], ' ');
 
       queue.addAll(childPointers);
       queue.poll();
@@ -819,28 +842,39 @@ public class DB {
     } catch (IOException e) {
       System.err.println("An error occurred while writing the file: " + e.getMessage());
     }
+    int blockLeft = 0;
+    for (PFS pfs : pfsList) {
+      blockLeft += pfs.getBlockLeft();
+    }
+    System.out.println("empty blocks" + blockLeft);
 
-    System.out.println("empty blocks" + pfsList.get(0).getBlockLeft());
     return queue;
 
   }
 
-  public Queue<Integer> processAllIndexBlocks(int blockNumber, int pfsNumber) {
+  public Queue<String> processAllIndexBlocks(String IndexBlockNumber) {
     // extract all contents from pfsList
 
 //        }
-    Map<Integer, char[][]> pfsContents = new HashMap<>();
+//    System.out.println("IndexBlockNumber" + IndexBlockNumber);
+//    Map<Integer, char[][]> pfsContents = new HashMap<>();
+    List<char[][]> pfsContentList = new ArrayList<>();
     for (PFS pfs : pfsList) {
-      char[][] content = pfs.getContent();
 
+//      System.out.println("pfs" + pfs.getSequenceNumber() + "content" + Arrays.toString(content[15]));
 
-      pfsContents.put(pfsNumber, content);
+       pfsContentList.add(pfs.getContent());
+//      pfsContents.put(pfs.getSequenceNumber(), pfs.getContent());
     }
+    int blockNumber = Integer.parseInt(IndexBlockNumber.substring(3));
+    int pfsNumber = Integer.parseInt(IndexBlockNumber.substring(0, 3));
+//    char[] r = pfsContents.get(0)[15]; // is empty
 
-        char[][] specificPfsContent = pfsContents.get(pfsNumber);
+    char[][] specificPfsContent = pfsContentList.get(pfsNumber);
+//    System.out.println("specificPfsContent" + Arrays.toString(specificPfsContent[blockNumber]));
 //    char[][] content = pfsList.get(0).getContent();
 //        char[][] content = this.allPfsContent;
-    Queue<Integer> blockPointersQueue = new LinkedList<>();
+    Queue<String> blockPointersQueue = new LinkedList<>();
 //        blockPointersQueue.add(blockNumber);
     final int BLOCK_POINTER_SIZE = 7; // Size of block pointer
     final int KEY_POINTER_SIZE = 15; // Size of key pointer
@@ -857,16 +891,16 @@ public class DB {
       if (row[index] == '\0') break;
       // Extract the block pointer
       String blockPointerStr = new String(row, index, BLOCK_POINTER_SIZE);
+//      System.out.println(" new blockPointerStr" + blockPointerStr);
 
       // Check if the block pointer is the terminator
       if (!TERMINATOR.equals(blockPointerStr)) {
-        try {
+
           // Parse the block pointer and add to the queue if not the terminator
-          int blockPointer = Integer.parseInt(blockPointerStr);
-          blockPointersQueue.add(blockPointer);
-        } catch (NumberFormatException e) {
-//          System.err.println("Invalid block pointer encountered: " + blockPointerStr);
-        }
+//          int blockPointer = Integer.parseInt(blockPointerStr);
+          blockPointersQueue.add(blockPointerStr);
+//          System.out.println("blockPointerStr" + blockPointersQueue);
+
       }
 
       // Move the index to skip over the next key pointer
@@ -885,9 +919,128 @@ public class DB {
         break;
       }
     }
+
 //        System.out.println("blockPointersQueue: " + blockPointersQueue);
     return blockPointersQueue;
   }
+
+  /**
+   * Extracts key-pointer pairs from a given block number.
+   *
+   * @param blockNumber The block number to process.
+   * @return A list of key-pointer pairs extracted from the block.
+   */
+  public List<KeyPointer> extractKeyPointerPairs(int blockNumber) {
+    char[][] content = pfsList.get(0).getContent();
+    List<KeyPointer> pairs = new ArrayList<>();
+    final String TERMINATOR = "9999999";
+    char[] row = content[blockNumber];
+    final int BLOCK_POINTER_SIZE = 7;
+    final int KEY_SIZE = 7;
+    final int DATA_POINTER_SIZE = 8;
+
+    int index = 0;
+    while (index < row.length - 7) {
+      if (row[index] == '\0') break; // Stop if we hit a null character signaling the end of meaningful content
+
+      String blockPointerStr = new String(row, index, BLOCK_POINTER_SIZE).trim();
+      index += BLOCK_POINTER_SIZE; // Move past the block pointer
+//            System.out.println("Block Pointer: " + blockPointerStr);
+
+      // Ensure there's enough room for a key and a data pointer
+      if (index + KEY_SIZE + DATA_POINTER_SIZE > row.length) break;
+
+      // Skip parsing if the blockPointer is TERMINATOR but not empty, continue parsing keys and data pointers
+//      if (!TERMINATOR.equals(blockPointerStr) && !blockPointerStr.isEmpty()) {
+      // Parse key, ensuring the string is not empty
+      String keyStr = new String(row, index, KEY_SIZE).trim();
+      index += KEY_SIZE;
+      int key = !keyStr.isEmpty() ? Integer.parseInt(keyStr) : -1; // Use a default value or handle appropriately if empty
+      System.out.println("Key: " + key);
+      // Move past the key
+
+      // Parse data pointer, ensuring the string is not empty
+      String dataPointerStr = new String(row, index, DATA_POINTER_SIZE).trim();
+      System.out.println("Data Pointer: " + dataPointerStr);
+      index += DATA_POINTER_SIZE; // Move past the data pointer
+
+      if (key != -1) { // Ensure we only add valid key-dataPointer pairs
+        pairs.add(new KeyPointer(key, dataPointerStr));
+
+      } else{
+        // If blockPointerStr is TERMINATOR, skip key and data pointer parsing for this iteration
+        if (index < row.length - BLOCK_POINTER_SIZE) {
+          String nextBlockPointerStr = new String(row, index, BLOCK_POINTER_SIZE).trim();
+          if (TERMINATOR.equals(nextBlockPointerStr)) {
+            index += BLOCK_POINTER_SIZE; // Skip the "9999999" block pointer to continue parsing
+          }
+        }
+      }
+    }
+    System.out.println("pairs: "+pairs);
+
+    return pairs;
+  }
+  public String findKeyinList(int rootBlockNumber, int targetKey) {
+    List<KeyPointer> keyPointerPairs = extractKeyPointerPairs(rootBlockNumber);
+
+    // Search through the list of key-pointer pairs for the target key
+    for (KeyPointer pair : keyPointerPairs) {
+      if (pair.getKey() == targetKey) {
+        System.out.println("Key found: " + pair.getKeyPointerStr());
+        return pair.getKeyPointerStr(); // Return the data pointer if key matches
+      }
+    }
+
+    return null; // Key not found
+  }
+
+  public boolean isleaf(List<String> blockpointerList){
+    for(String blockPointer : blockpointerList){
+      if(blockPointer.equals("9999999")){
+        return true;
+      }
+    }
+    return false;
+  }
+  public List<PFS> getPfsList() {
+    return pfsList;
+  }
+
+  public List<char[]> getBlocksByFCB(FCB fcb) {
+    List<char[]> blocksData = new ArrayList<>();
+    String dataStartBlock = fcb.getDataStartBlock(); // Assume this returns the string like "00000060031556"
+    String pfsNum = fcb.getPfsNumber(); // Assume this returns the string like "00000060031556"
+    // Parse the starting block number and the PFS file count from the FCB data
+    int startBlockNum = Integer.parseInt(dataStartBlock);
+    int pfsFileCount = Integer.parseInt(pfsNum);
+
+    // Iterate over the specified PFS files
+    for (int pfsIndex = 0; pfsIndex < pfsFileCount; pfsIndex++) {
+      PFS currentPfs = pfsList.get(pfsIndex);
+      char[][] content = currentPfs.getContent();
+
+      // Determine the starting index for the first PFS file, then start from 0 for subsequent files
+      int startIndex = pfsIndex == 0 ? startBlockNum : 0;
+
+      // Collect data rows
+      for (int i = startIndex; i < content.length; i++) {
+        String rowStart = new String(content[i], 0, 7);
+        if ("9999999".equals(rowStart)) {
+          // Stop collecting if the first 7 characters are "9999999"
+          break;
+        } else {
+          // Otherwise, add the row to blocksData
+          blocksData.add(content[i]);
+        }
+
+        // If it's the last row in the current PFS and we haven't broken out of the loop, continue to the next PFS file
+      }
+    }
+
+    return blocksData;
+  }
+
 
 
 
