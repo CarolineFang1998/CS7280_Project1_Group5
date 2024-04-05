@@ -114,6 +114,22 @@ rm <Filename>.csv
 ```shell
 dir
 ```
+#### Find a record with the index in your NoSQL database
+```shell
+find <Filename>.<index>
+
+Example:
+find movies-large.10
+```
+Result:
+```shell
+current csv files:
+movies-large
+Found key after search 8 blocks.
+Found record:
+10,GoldenEye (1995),Action|Adventure|Thr
+
+```
 
 
 

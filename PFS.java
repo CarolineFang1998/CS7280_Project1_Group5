@@ -1067,7 +1067,7 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
     return this.content;
   }
   public void removeElements(char[] block, int startIndex) {
-    final int LENGTH_TO_REMOVE = 57;
+    final int LENGTH_TO_REMOVE = 58;
     int endIndex = startIndex + LENGTH_TO_REMOVE - 1;
 
     // Ensure endIndex does not exceed the array bounds
