@@ -36,27 +36,20 @@ public class PFS {
     this.sequenceNumber = PFSNumber; // if .db0, sequenceNumber = 0
     this.content = new char[4000][db.getBlockSize()]; // first block is always bitmap
     this.fileName = db.getName() + ".db" + PFSNumber;
-//    this.keyPointerList = new ArrayList<>();
 
-    System.out.println("db.getNumOfPFSFiles() " + db.getNumOfPFSFiles());
     // check if this file is already exist
     if (db.getNumOfPFSFiles() >= sequenceNumber + 1) {
-      System.out.println("loading PFSNumber == " + PFSNumber);
       loadExistingPFS(); // update the current content[][] 2d array
 
       this.blockLeft = this.calculateBlocksLeft();
     } else {
       this.blockLeft = 4000;
       if (this.sequenceNumber == 0) {
-        System.out.println("creating PFSNumber == 0");
         // init the .db0 with write all the superblock info & BitMap(with first 3 blocks full),
         // leave 1 block for FCB block
         // write this into .db0 file
         initFirstPFS();
-        System.out.println("Number of FCB Files out: " + this.db.getNumOfFCBFiles());
-        System.out.println("blockLeft: " + this.blockLeft);
       } else {
-        System.out.println("creating PFSNumber == " + PFSNumber);
         // only create a .dbN file and init bitmap
         // write this into .dbN file
         initMorePFS();
@@ -69,7 +62,6 @@ public class PFS {
     // write the current char array to .dbfile
     try {
       writeCharArrayToFile();
-      System.out.println("File written successfully.");
     } catch (IOException e) {
       System.err.println("An error occurred while writing the file: " + e.getMessage());
     }
@@ -158,13 +150,10 @@ public class PFS {
 
     try {
       writeCharArrayToFile();
-      System.out.println("File written successfully.");
     } catch (IOException e) {
       System.err.println("An error occurred while writing the file: " + e.getMessage());
     }
 
-//    System.out.println("keyPointerList.size() " + keyPointerList.size());
-    System.out.println("startNEndPtrs " + startNEndPtrs);
     return startNEndPtrs;
   }
 
@@ -202,15 +191,12 @@ public class PFS {
 
       // Generate the DataBlockPointer for this record
       DataBlockPointer dbPointer = new DataBlockPointer(this.sequenceNumber, blockNum, i);
-//      System.out.println("blockNum " + blockNum + " i " + i + " " + dbPointer.getPtrString()  + " " + key);
 
       // Create the current record list containing the key and DataBlockPointer string
       KeyPointer currKeyPtr = new KeyPointer(Integer.valueOf(key), dbPointer.getPtrString());
-//      System.out.println(currKeyPtr.getKey() + " " + currKeyPtr.getKeyPointerStr());
 
       // Add the current record to the keyPointerList
       keyPointerList.add(currKeyPtr);
-//      System.out.println("keyPointerList.size() " + keyPointerList.size());
     }
 
   }
@@ -322,7 +308,6 @@ public class PFS {
     // write the current char array to .dbfile
     try {
       writeCharArrayToFile();
-      System.out.println("File written successfully.");
     } catch (IOException e) {
       System.err.println("An error occurred while writing the file: " + e.getMessage());
     }
@@ -345,7 +330,6 @@ public class PFS {
     // write the current char array to .dbfile
     try {
       writeCharArrayToFile();
-      System.out.println("File written successfully.");
     } catch (IOException e) {
       System.err.println("An error occurred while writing the file: " + e.getMessage());
     }
@@ -406,7 +390,6 @@ public class PFS {
 
             // Calculate and return the block number
             int blockNumber = (row * 256 * 4) + (col * 4) + bit;
-//            System.out.println("Next empty blockNumber " + blockNumber);
             return blockNumber;
           }
         }
@@ -436,8 +419,6 @@ public class PFS {
    */
   public void updateFCBMetadata(List<FCB> fcbList) {
     if(this.sequenceNumber == 0) {
-      System.out.println("updateFCBMetadata this.sequenceNumber == 0");
-      // TODO!!!: dynamically
       String fcbMetadatas = "";
 
       for(int i=0; i< fcbList.size(); i++) {
@@ -450,7 +431,6 @@ public class PFS {
       // write the current char array to .dbfile
       try {
         writeCharArrayToFile();
-        System.out.println("File written successfully.");
       } catch (IOException e) {
         System.err.println("An error occurred while writing the file: " + e.getMessage());
       }
@@ -528,7 +508,6 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
     while (sizeStr.length() < 10) {
       sizeStr = "0" + sizeStr; // Pad with spaces to align to the right
     }
-//    System.out.println("sizeStr " + sizeStr);
 
     // Prepare the final metadata string
     String metadataStr = FCBName + formattedTime + sizeStr + dataBlockStart + indexStartPointer;
@@ -1138,7 +1117,6 @@ private void appendMetadataToBlock(char[] block, char[] metadata, int existingMe
     public void writeContentToFile() {
       try {
         writeCharArrayToFile();
-        System.out.println("File written successfully.");
       } catch (IOException e) {
         System.err.println("An error occurred while writing the file: " + e.getMessage());
       }

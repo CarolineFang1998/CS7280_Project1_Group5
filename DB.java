@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Key;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -44,22 +45,143 @@ public class DB {
     this.filenameToBtreeMap = new HashMap<>();
     this.keyPointerMap = new HashMap<>();
     if (!isLoad) {
-      System.out.println("creating DB " + name);
+      System.out.println("creating DB " + name + "...");
       init();
       loadExistingPFSs();
     } else {
-      System.out.println("loading DB " + name);
-      // todo, load the previous pfs files
+      System.out.println("loading DB " + name + "...");
       loadExistingPFSs();
-      System.out.println("loading PFS size" + numOfPFSFiles);
+//      System.out.println("loading PFS size" + numOfPFSFiles);
       // need to create a pfs first
-      // todo: load the fcb lists
       this.numOfFCBFiles = this.pfsList.get(0).loadExistingFCB(this.fcbList);
-      System.out.println("loading fcb size" + numOfFCBFiles);
+//      System.out.println("loading fcb size" + numOfFCBFiles);
+    }
+  }
+
+  /**
+   * Find the corresponding record and print it out
+   * @param root the root of the b-tree
+   * @param key the key we are looking for
+   */
+  public void find(BlockPointer root, int key) {
+    String dataBlockPtrStr = findDataBlockPtr(root, key, 0);
+    if(dataBlockPtrStr != "") {
+      findDataBlockContent(dataBlockPtrStr);
+    }
+  }
+
+  /**
+   * Find the corresponding record and print it out
+   * @param dataBlockPtrStr where record located
+   */
+  public void findDataBlockContent(String dataBlockPtrStr) {
+    DataBlockPointer dbp = new DataBlockPointer(dataBlockPtrStr);
+    // get content[] from that block
+    char[] content = this.pfsList.get(dbp.getPfsNumber()).getContent()[dbp.getBlockNumber()];
+    int recordSize = 40;
+    String data = new String(content, dbp.getRecordNumber() * recordSize, recordSize);
+    System.out.println("Found record:");
+    System.out.println(data);
+  }
+
+  /**
+   * Find the right dataBlockPointer which the key is located.
+   * @param root root of b tree
+   * @param key the key we are looking for
+   * @param counter count how many blocks we are looking at
+   * @return the data block pointer String
+   */
+  public String findDataBlockPtr(BlockPointer root, int key, int counter) {
+    // find the node
+    counter++;
+
+    char[] blockContent = pfsList.get(root.getPfsNumber()).getContent()[root.getBlockNumber()];
+    // generate a block pointer array
+    List<KeyPointer> keypointerList = generateBTreeKeyPointerArray(blockContent);
+    // generate a keyPointer array
+    List<BlockPointer> blockPointerList =  generateBTreeChildBlockPointerArray(blockContent);
+
+    int i = 0;
+
+    // Iterate through keys in the node to find the smallest index i such that value <= node.values[i]
+    while (i < keypointerList.size() && key > keypointerList.get(i).getKey()) {
+      i++;
+    }
+
+    // If the value matches the key at index i in the node
+    if (i < keypointerList.size() && key == keypointerList.get(i).getKey()) {
+      // plus 1 metadata block and 1 data block
+      System.out.println("Found key after search " + (counter + 2) + " blocks.");
+      return keypointerList.get(i).getPointer(); // The value is found
+    }
+
+    // If the node is a leaf, then the search is unsuccessful
+    if (blockPointerList.size() == 0) {
+      System.out.println("Can't find " + key);
+      return "";
+    } else {
+      // Recur to search the appropriate subtree
+      return findDataBlockPtr(blockPointerList.get(i), key, counter);
     }
   }
 
 
+  /**
+   * Generate a b-tree KeyPointer List which is contains the integer key and a DataBlockPointer
+   * which point to the data block
+   * @param blockContent blockContent the current block contents
+   * @return a list of Key pointer which contains the key information and record location pointer
+   */
+  public List<KeyPointer> generateBTreeKeyPointerArray(char[] blockContent){
+    List<KeyPointer> result = new ArrayList<>();
+    int blockPointerSize = 7;
+    int keyPointerSize = 15;
+    for(int i = 0; i < 11; i++) {
+      String temp = new String(blockContent,
+              (i * keyPointerSize) + ((i + 1) * blockPointerSize ),
+              keyPointerSize);
+
+      // if all white space in the following
+      if(! temp.trim().isEmpty()) {
+          KeyPointer kp = new KeyPointer(temp);
+//        System.out.println("result.getKey()" +kp.getKey());
+//        System.out.println("result.getPointer()" +kp.getPointer());
+          result.add(kp);
+      } else {
+        break;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Generate B-tree child block which contains BlockPointers where the children block located
+   * @param blockContent the current block contents
+   * @return a list of block pointer which point to the children blocks
+   */
+  public List<BlockPointer> generateBTreeChildBlockPointerArray(char[] blockContent){
+    List<BlockPointer> result = new ArrayList<>();
+    int blockPointerSize = 7;
+    int keyPointerSize = 15;
+    for(int i = 0; i < 11; i++) {
+      String temp = new String(blockContent,
+              (i * keyPointerSize) + (i * blockPointerSize ),
+              blockPointerSize);
+
+      // if all white space in the following
+      if(! temp.trim().isEmpty() && ! temp.equals("9999999")) {
+        BlockPointer bp = new BlockPointer(temp);
+        result.add(bp);
+      } else {
+        break;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Loaded existing PFS
+   */
   public void loadExistingPFSs() {
     // find fcbs in the current dir and count how many of them
     this.numOfPFSFiles = countPFSFiles();
@@ -70,6 +192,9 @@ public class DB {
     }
   }
 
+  /**
+   * show FCB
+   */
   public void showFCBs() {
     for(int i=0; i<this.fcbList.size(); i++) {
       if(fcbList.get(i).getName() != "") {
@@ -213,19 +338,6 @@ public class DB {
       System.out.println("data.length " + data.length);
       List<char[]> blocks = recordsToBlock(data);
 
-//      System.out.println("Printing records (first 40 chars each):");
-//      for (char[] record : data) {
-//        System.out.println(new String(record));
-//      }
-
-//      int blockNumber = 1;
-//      for (char[] block : blocks) {
-//        System.out.println("Block " + blockNumber + ":");
-//        System.out.println(new String(block));
-//        System.out.println(); // Add an extra newline for better readability between blocks
-//        blockNumber++;
-//      }
-      // todo: block size should add up index block
       storeBlocksInPFS(blocks, fileName, blocks.size());
 
     } catch (IOException e) {
@@ -233,7 +345,7 @@ public class DB {
     }
   }
 
-  /**
+  /**loading
    * Stores data blocks and index block into PFS files,  managing block allocation and updating
    * superblock and FCB metadata as necessary.
    *
@@ -247,8 +359,6 @@ public class DB {
 
     String dataStartPtr =  storeDataInPFSs(blocks, blocksSize, keyPointerList);
 
-    // add index block
-    int indexBlockSize = 0;
     // Generate a b-tree which inserted all the keyPointers
      Btree btree =  generateBTree(keyPointerList, fileName);
 //     btree.DisplayEntileBTree();
@@ -256,22 +366,10 @@ public class DB {
     // Find how many space we need and generate a List<Empty Block Lists String>
     List<String> emptyBlocks = findEmptyBlocks(btree.getCntNodes());
 
-
-//    System.out.println("....................");
-//    System.out.println("emptyBlocks:");
-//    for(String s : emptyBlocks) {
-//      System.out.println(s);
-//    }
-//    System.out.println("....................");
-
     // Put the index block into corresponding place
     // Replace all the pointer to corresponding String
     String indexRootPtr = storeIndexToEmptyBlocks(emptyBlocks, btree);
 
-    // todo: implement the fcb metadata class and dynamically update
-    // FCB name: 20 char, time: 14 char (sample:  "15/SEP/23:25PM")
-    // number of blocks 10 int.  data start block(7 char): default: 9999999,
-    // index start block(7 char): default: 9999999,
     LocalDateTime time = LocalDateTime.now();
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MMM/yy:HHa");
     String formattedTime = time.format(formatter);
@@ -285,6 +383,14 @@ public class DB {
 
     this.numOfFCBFiles++;
     pfsList.get(0).updateSuperBlock();
+    System.out.println("storeBlocksInPFS updateSuperBlock " + this.getNumOfFCBFiles());
+
+    // write the current char array to .dbfile
+    try {
+      pfsList.get(0).writeCharArrayToFile();
+    } catch (IOException e) {
+      System.err.println("An error occurred while writing the file: " + e.getMessage());
+    }
   }
 
   // stores b-tree nodes into empty blocks and write the corresponding files
@@ -336,7 +442,6 @@ public class DB {
     for(int i=0; i<pfsList.size(); i++) {
       try {
         pfsList.get(i).writeCharArrayToFile();
-        System.out.println("File written successfully.");
       } catch (IOException e) {
         System.err.println("An error occurred while writing the file: " + e.getMessage());
       }
@@ -374,7 +479,6 @@ public class DB {
 
         try {
           pfsList.get(i).writeCharArrayToFile();
-          System.out.println("File written successfully.");
         } catch (IOException e) {
           System.err.println("An error occurred while writing the file: " + e.getMessage());
         }
@@ -401,7 +505,6 @@ public class DB {
       // write the current char array to .dbfile
       try {
         pfs.writeCharArrayToFile();
-        System.out.println("File written successfully.");
       } catch (IOException e) {
         System.err.println("An error occurred while writing the file: " + e.getMessage());
       }
@@ -527,7 +630,6 @@ public class DB {
         // write the current char array to .dbfile
         try {
           pfsList.get(lastBP.getPfsNumber()).writeCharArrayToFile();
-          System.out.println("File written successfully.");
         } catch (IOException e) {
           System.err.println("An error occurred while writing the file: " + e.getMessage());
         }
@@ -542,9 +644,6 @@ public class DB {
 
     return dataStartNEndPtrs.get(0).get(0); // return the begin pointer
   }
-
-  // todo: updateDataBlockPointer
-
 
 
   // Getters and Setters

@@ -178,33 +178,34 @@ final class Btree {
 //
 //   * @return True if the value is found, false otherwise.
 //   */
-//  private boolean nodeLookup(int value, int pointer, String s) {
-//    Node node = nodes[pointer];
-//
-//    int i = 0;
-//    s += "" + pointer;
-//
-//    // Iterate through keys in the node to find the smallest index i such that value <= node.values[i]
-//    while (i >= 0 && i < node.size && value > node.values[i].getKey()) {
-//        i++;
-//    }
-//
-//    // If the value matches the key at index i in the node
-//    if (i >= 0 && i < node.size && value == node.values[i].getKey()) {
-//        System.out.println("Founded " + value + " Path: " + s );
-//        return true; // The value is found
-//    }
-//
-//    // If the node is a leaf, then the search is unsuccessful
-//    if (isLeaf(node)) {
-//      System.out.println( "No key found");
-//      return false;
-//    } else {
-//       s += " -> " ;
-//      // Recur to search the appropriate subtree
-//        return nodeLookup(value, node.children[i], s);
-//    }
-//  }
+  private boolean nodeLookup(int value, int pointer, String s) {
+    Node node = nodes[pointer];
+
+    int i = 0;
+    s += "" + pointer;
+
+    // Iterate through keys in the node to find the smallest index i such that value <= node.values[i]
+    while (i >= 0 && i < node.size && value > node.values[i].getKey()) {
+        i++;
+    }
+
+    // If the value matches the key at index i in the node
+    if (i >= 0 && i < node.size && value == node.values[i].getKey()) {
+        System.out.println("Founded " + value + " Path: " + s );
+        return true; // The value is found
+    }
+
+    // If the node is a leaf, then the search is unsuccessful
+    if (isLeaf(node)) {
+      System.out.println( "No key found");
+      return false;
+    } else {
+       s += " -> " ;
+      // Recur to search the appropriate subtree
+        return nodeLookup(value, node.children[i], s);
+    }
+  }
+
     private SearchResult nodeLookup(int value, int pointer, String s, int accessedBlocks) {
         if (pointer == -1) {
             return new SearchResult(null, accessedBlocks, false); // Node not found, and no more nodes to access

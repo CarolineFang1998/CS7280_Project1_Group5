@@ -198,9 +198,46 @@ public class FileSystem {
           }
           currentDatabase.showFCBs();
         } else if ("find".equalsIgnoreCase(command)) {
+          if (commandParts.length > 1) {
+            String fileInfo = commandParts[1]; // <file name>.<index>
+            String[] parts = fileInfo.split("\\.");
+            if (parts.length != 2 || parts[0] == "" || parts[1] == "") {
+              System.out.println("Invalid Input mast be: find <File Name>.<Key>");
+            } else {
+              int key = -1;
+              boolean isValidInt = false;
+              try {
+                key = Integer.parseInt(parts[1]);
+                isValidInt = true;
+              } catch (java.lang.NumberFormatException e) {
+                // Handle the error scenario, e.g., print an error message or take corrective action
+//              System.out.println("The string " + parts[1] + " cannot be parsed as an integer.");
+                System.out.println("Invalid input" + e.getMessage());
+              }
 
+              if(isValidInt) {
+                boolean isFound = false;
+                System.out.println("current csv files:");
+                for(int i=0; i< currentDatabase.getFcbList().size(); i++) {
+                  String[] filePath = currentDatabase.getFcbList().get(i).getName().split("\\.");
+                  System.out.println(filePath[0]);
+                  if (filePath[0].equals(parts[0])) {
+                    isFound = true;
+                    BlockPointer root =
+                            new BlockPointer(currentDatabase.getFcbList().get(i).getIndexStartBlock());
 
+                    currentDatabase.find(root, key);
+                    break;
+                  }
+                }
 
+                if(! isFound ){
+                  System.out.println("Can't find this file");
+                }
+              }
+            }
+
+          }
         } else if ("rm".equalsIgnoreCase(command)) {
           if (commandParts.length > 1) {
             String FCBName = commandParts[1]; //"movies-small.csv"

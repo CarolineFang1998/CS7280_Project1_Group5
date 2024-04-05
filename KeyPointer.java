@@ -1,5 +1,5 @@
 public class KeyPointer {
-  private Integer key;
+  private int key;
   private String pointer;
   private String keyPointerStr;
 
@@ -34,8 +34,8 @@ public class KeyPointer {
     }
     this.keyPointerStr = keyPointerStr;
     // Parse the PFS number and block number from the string
-    this.key = Integer.parseInt(keyPointerStr.substring(0, 8));
-    this.pointer = keyPointerStr.substring(8, 15);
+    this.key = Integer.parseInt(keyPointerStr.substring(0, 7));
+    this.pointer = keyPointerStr.substring(7, 15);
   }
 
   // Getter for the key

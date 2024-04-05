@@ -59,7 +59,7 @@ public class FCB {
         this.dataStartBlock = new String(fcbContent, 44, 7);
 
         // Index start block: Characters 50 to 57
-        this.indexStartBlock = new String(fcbContent, 50, 7);
+        this.indexStartBlock = new String(fcbContent, 51, 7);
     }
 
 
